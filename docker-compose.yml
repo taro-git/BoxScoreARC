@@ -24,7 +24,7 @@ services:
       - "8123:8123"  # HTTP
       - "9000:9000"  # Native
     volumes:
-      - ./clickhouse_user.xml:/etc/clickhouse-server/users.d/default-user.xml
+      - ./database/clickhouse/config/user.xml:/etc/clickhouse-server/users.d/default-user.xml
 
 volumes:
   clickhouse_data:
