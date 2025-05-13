@@ -77,7 +77,7 @@ const getMatchesForDate = (date: Date): Match[] => {
   return Array.from({ length: Math.floor(date.getDate()/5) }, () => ({
     away: 'BOS',
     home: 'NYK',
-    status: date.getDate().toString(),
+    status: '試合終了',
     awayLogo: 'https://upload.wikimedia.org/wikipedia/en/8/8f/Boston_Celtics.svg',
     homeLogo: 'https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg'
   }))
