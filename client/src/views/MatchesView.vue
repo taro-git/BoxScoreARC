@@ -2,11 +2,11 @@
   <div class="container">
     <header class="header">
       <div>
-        <button class="header-button" @click="goToToday">今日</button>
+        <button class="header-button" @click="goToToday">Today</button>
       </div>
       <div>Matches</div>
       <div>
-        <button class="header-button" @click="showPopup = true">&nbsp;📅&nbsp;</button>
+        <button class="header-button" @click="showPopup = true">📅</button>
       </div>
     </header>
 
@@ -77,7 +77,7 @@ const getMatchesForDate = (date: Date): Match[] => {
   return Array.from({ length: Math.floor(date.getDate()/5) }, () => ({
     away: 'BOS',
     home: 'NYK',
-    status: '試合終了',
+    status: 'END',
     awayLogo: 'https://upload.wikimedia.org/wikipedia/en/8/8f/Boston_Celtics.svg',
     homeLogo: 'https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg'
   }))
@@ -165,6 +165,8 @@ const slideToPreviousDay = () => {
   border: none;
   color: white;
   font-size: 20px;
+  width: 70px;
+  align-items: center;
   cursor: pointer;
 }
 

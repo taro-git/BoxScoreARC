@@ -7,6 +7,8 @@ services:
     ports:
       - "1024:80"
     restart: "always"
+    environment:
+      - TZ=Asia/Tokyo
 
   server:
     build:
@@ -15,6 +17,7 @@ services:
       - ./server:/app
     ports:
       - "1026:8000"
+    restart: "always"
     depends_on:
       - clickhouse
 
@@ -23,8 +26,10 @@ services:
     ports:
       - "8123:8123"  # HTTP
       - "9000:9000"  # Native
+    restart: "always"
     volumes:
-      - ./database/clickhouse/config/user.xml:/etc/clickhouse-server/users.d/default-user.xml
+      - ./database/clickhouse/config/user.xml:/etc/clickhouse-server/users.d/default-user.xml:ro
+      - ./database/clickhouse/config/custom_config.xml:/etc/clickhouse-server/config.d/custom_config.xml:ro
 
 volumes:
   clickhouse_data:

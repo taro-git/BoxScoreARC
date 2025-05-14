@@ -66,7 +66,7 @@ watch(() => props.selectedDate, (newDate) => {
 }, { immediate: true })
 
 const selectedMonth = computed(() =>
-  `${props.selectedDate.getFullYear()}年${props.selectedDate.getMonth() + 1}月`
+  `${props.selectedDate.getFullYear()}/${props.selectedDate.getMonth() + 1}`
 )
 </script>
 
