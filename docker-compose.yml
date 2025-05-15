@@ -18,6 +18,8 @@ services:
     ports:
       - "1026:8000"
     restart: "always"
+    environment:
+      - PYTHONPATH=/app
     depends_on:
       - clickhouse
 
