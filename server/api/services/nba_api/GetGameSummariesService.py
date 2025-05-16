@@ -9,24 +9,24 @@ from ..common.TimeAdjustService import TimeAdjustService
 
 class GetGameSummariesService:
 
-    timeadjustService = TimeAdjustService()
-
-    game_summaries: List[GameSummary] = []
+    def __init__(self, timeAdjustService=None):
+        self.timeAdjustService = timeAdjustService or TimeAdjustService()
 
     def get_game_summaries_for_date(self, date: str) -> List[GameSummary]:
-        date_est = self.timeadjustService.convert_tz_to_est(
-            self.timeadjustService.convert_tz_to_jst(
-                self.timeadjustService.convert_type_str_to_date(date)
+        date_est = self.timeAdjustService.convert_tz_to_est(
+            self.timeAdjustService.convert_tz_to_jst(
+                self.timeAdjustService.convert_date_str_to_datetime(date)
             )
         )
-        self.game_summaries = []
-        self._get_game_summaries_from_nba_api(date_est)
-        return self.game_summaries
+        game_summaries = self._get_game_summaries_from_nba_api(date_est)
+        return self._sort_game_summaries(self._convert_status_text(game_summaries, date_est))
 
-    def _get_game_summaries_from_nba_api(self, date: datetime):
+    def _get_game_summaries_from_nba_api(self, date: datetime) -> List[GameSummary]:
         scoreboard = scoreboardv2.ScoreboardV2(game_date=date.strftime("%Y-%m-%d"))
         game_header = scoreboard.game_header.get_data_frame()
         line_score = scoreboard.line_score.get_data_frame()
+
+        game_summaries: List[GameSummary] = []
         game_ids = game_header["GAME_ID"].tolist()
         
         for game_id in game_ids:
@@ -34,7 +34,7 @@ class GetGameSummariesService:
             filtered_line_score = line_score[line_score["GAME_ID"] == game_id][["GAME_SEQUENCE", "TEAM_ABBREVIATION", "PTS", "TEAM_ID"]]
             home_team_line_score = filtered_line_score[filtered_line_score["TEAM_ID"] == filtered_game_header["HOME_TEAM_ID"].iloc[0]][["GAME_SEQUENCE", "TEAM_ABBREVIATION", "PTS"]]
             away_team_line_score = filtered_line_score[filtered_line_score["TEAM_ID"] != filtered_game_header["HOME_TEAM_ID"].iloc[0]][["GAME_SEQUENCE", "TEAM_ABBREVIATION", "PTS"]]
-            self.game_summaries.append(
+            game_summaries.append(
                 GameSummary(
                     game_id=game_id,
                     home_team=home_team_line_score["TEAM_ABBREVIATION"].iloc[0],
@@ -48,44 +48,20 @@ class GetGameSummariesService:
                     live_clock=filtered_game_header["LIVE_PC_TIME"].iloc[0],
                 )
             )
+        
+        return game_summaries
 
-    #TODO implement sort
-    def _sort_game_suummaries(self, games: List[GameSummary]) -> List[GameSummary]:
+    def _sort_game_summaries(self, games: List[GameSummary]) -> List[GameSummary]:
+        status_id_priority = {
+            2: 0, # playing
+            1: 1, # scheduled
+            3: 2 # finished
+        }
+        return sorted(games, key = lambda game: (status_id_priority[game.status_id], game.game_sequence))
 
-        def sort_key(game: GameSummary):
-            status_id = game["status_id"]
-            game_id = game["game_id"]
-            start_time = datetime.fromisoformat(game["start_time"])
-
-            if status == "PLAYING":
-                # live_clock は "2:30" のような文字列だと仮定して変換（例: "2:30" → 150）
-                def clock_to_seconds(clock_str):
-                    try:
-                        minutes, seconds = map(int, clock_str.split(":"))
-                        return minutes * 60 + seconds
-                    except:
-                        return float("inf")  # パースできない場合は最大値
-
-                return (
-                    status_id,
-                    -game["live_period"],
-                    clock_to_seconds(game["live_clock"]),
-                    game_id
-                )
-            else:
-                return (
-                    status_id,
-                    start_time,
-                    game_id
-                )
-
-        return sorted(games, key=sort_key)
-
-    #TODO implement sort
-    def _convert_status_text(self, status_text: str, date: datetime) -> str:
-        temp = self.timeadjustService.convert_type_str_to_date(status_text)
-        #temp の時間にdateの日付つける
-        #日本時間にcoonvert
-        #時間を抽出して文字列に
-        converted_text = temp
-        return converted_text
+    def _convert_status_text(self, game_summaries: List[GameSummary], date_est: datetime) -> List[GameSummary]:
+        for game_summary in filter(lambda gs: gs.status_id == 1, game_summaries):
+            time = self.timeAdjustService.convert_time_str_to_datetime(game_summary.status_text)
+            datetime_est = time.replace(year=date_est.year, month=date_est.month, day=date_est.day)
+            game_summary.status_text = self.timeAdjustService.convert_tz_to_jst(datetime_est).strftime("%H:%M")
+        return game_summaries

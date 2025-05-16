@@ -1,11 +1,24 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from zoneinfo import ZoneInfo
+import re
 
 class TimeAdjustService:
 
-    # TODO convert from "8:30 pm ET"
-    def convert_type_str_to_date(self, date_str: str) -> datetime:
+    def convert_date_str_to_datetime(self, date_str: str) -> datetime:
         return datetime.strptime(date_str, "%Y%m%d")
+    
+    def convert_time_str_to_datetime(self, time_str: str) -> datetime:
+        time_str = time_str.strip()
+        formatted_time_str = re.match(r"(\d{1,2}:\d{2}\s*(am|pm))\s*ET", time_str, re.IGNORECASE)
+        if not formatted_time_str:
+            raise ValueError(f"Invalid time format: {time_str}")
+        
+        naive_datetime = datetime.strptime(
+            f"{datetime.now().date()} {formatted_time_str.group(1).lower()}",
+            "%Y-%m-%d %I:%M %p"
+        ).replace(tzinfo=ZoneInfo("America/New_York"))
+        
+        return naive_datetime
 
     def convert_tz_to_jst(self, datetime: datetime) -> datetime:
         return datetime.astimezone(ZoneInfo("Asia/Tokyo"))
@@ -13,27 +26,3 @@ class TimeAdjustService:
     def convert_tz_to_est(self, datetime: datetime) -> datetime:
         return datetime.astimezone(ZoneInfo("America/New_York"))
 
-
-    def combine_date_and_time(self, date_str: str, time_str: str) -> datetime:
-        """
-        Combine date and time strings into a timezone-aware datetime (America/New_York).
-        Assumes `time_str` ends with ' ET' or 'ET'.
-        """
-        # 1. "2025-05-14T00:00:00" -> "2025-05-14"
-        date_clean = date_str[:10]
-
-        # 2. "8:30 pm ET" -> "8:30 pm"
-        time_clean = time_str.strip().replace(" ET", "").replace("ET", "")
-
-        try:
-            date_part = datetime.strptime(date_clean, "%Y-%m-%d")
-            time_part = datetime.strptime(time_clean, "%I:%M %p")
-            dt_naive = date_part.replace(hour=time_part.hour, minute=time_part.minute)
-
-            # America/New_York でタイムゾーン指定（夏時間含む）
-            return dt_naive.replace(tzinfo=ZoneInfo("America/New_York"))
-
-        except Exception as e:
-            print(f"[ERROR] combine_date_and_time failed: {date_str=}, {time_str=}, {e=}")
-            # Fallback
-            return datetime.strptime(date_clean, "%Y-%m-%d").replace(tzinfo=ZoneInfo("America/New_York"))
