@@ -33,7 +33,7 @@
         }"
       >
         <div v-for="(dayMatches, i) in slideMatchSets" :key="i" class="match-page">
-          <MatchCard v-for="(match, j) in dayMatches" :key="j" :match="match" />
+          <MatchCard v-for="(match, j) in dayMatches" :key="j" :matchSummary="match" :scoreDisplay="true" />
         </div>
       </div>
     </div>
@@ -45,20 +45,14 @@ import { ref, watch } from 'vue'
 import MatchCard from '@/components/MatchCard.vue'
 import CalendarScroller from '@/components/CalendarScroller.vue'
 import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
-
-interface Match {
-  away: string
-  home: string
-  status: string
-  awayLogo: string
-  homeLogo: string
-}
+import { MatchSummary } from '@/types/MatchSummary'
+import { getMatchSummaries } from '@/services/getMatchSummariesService'
 
 const selectedDate = ref(new Date())
 const showPopup = ref(false)
 const isSliding = ref(false)
 const sliderOffset = ref(-window.innerWidth) // 中央を初期表示
-const slideMatchSets = ref<Match[][]>([])
+const slideMatchSets = ref<MatchSummary[][]>([])
 
 const updateDate = (date: Date) => {
   selectedDate.value = date
@@ -73,27 +67,46 @@ const goToToday = () => {
   selectedDate.value = new Date()
 }
 
-const getMatchesForDate = (date: Date): Match[] => {
-  return Array.from({ length: Math.floor(date.getDate()/5) }, () => ({
-    away: 'BOS',
-    home: 'NYK',
-    status: 'END',
-    awayLogo: 'https://upload.wikimedia.org/wikipedia/en/8/8f/Boston_Celtics.svg',
-    homeLogo: 'https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg'
-  }))
-}
+const matchCache = new Map<number, MatchSummary[]>()
+const MAX_CACHE_DAYS = 100
 
-const updateSlideMatchSets = () => {
-  const prevDate = new Date(selectedDate.value)
-  const nextDate = new Date(selectedDate.value)
-  prevDate.setDate(prevDate.getDate() - 1)
-  nextDate.setDate(nextDate.getDate() + 1)
+const updateSlideMatchSets = async () => {
+  const base = selectedDate.value
+  const prev = new Date(base)
+  const next = new Date(base)
+  prev.setDate(prev.getDate() - 1)
+  next.setDate(next.getDate() + 1)
 
-  slideMatchSets.value = [
-    getMatchesForDate(prevDate),
-    getMatchesForDate(selectedDate.value),
-    getMatchesForDate(nextDate)
-  ]
+  const getOrFetch = async (date: Date): Promise<MatchSummary[]> => {
+    const time = date.setHours(0, 0, 0, 0)
+    const cached = matchCache.get(time)
+    if (cached !== undefined) return cached
+    const data = await getMatchSummaries(date)
+    matchCache.set(time, data)
+    if (matchCache.size > MAX_CACHE_DAYS) {
+    let farthestKey: number | null = null;
+    let maxDistance = -1;
+
+    for (const key of matchCache.keys()) {
+      const distance = Math.abs(key - base.setHours(0, 0, 0, 0));
+      if (distance > maxDistance) {
+        maxDistance = distance;
+        farthestKey = key;
+      }
+    }
+
+    if (farthestKey !== null) {
+      matchCache.delete(farthestKey);
+    }
+    }
+    return data
+  }
+
+  slideMatchSets.value = await Promise.all([
+    getOrFetch(prev),
+    getOrFetch(base),
+    getOrFetch(next)
+  ])
 }
 
 watch(selectedDate, updateSlideMatchSets, { immediate: true })
@@ -126,6 +139,10 @@ const slideToNextDay = () => {
   isSliding.value = true
   sliderOffset.value = -window.innerWidth * 2
   setTimeout(() => {
+    slideMatchSets.value = [
+      ...slideMatchSets.value.slice(1),
+      []
+    ]
     selectedDate.value = new Date(selectedDate.value.getTime() + 86400000)
     sliderOffset.value = -window.innerWidth
     isSliding.value = false
@@ -136,6 +153,10 @@ const slideToPreviousDay = () => {
   isSliding.value = true
   sliderOffset.value = 0
   setTimeout(() => {
+    slideMatchSets.value = [
+      [],
+      ...slideMatchSets.value.slice(0, 2),
+    ]
     selectedDate.value = new Date(selectedDate.value.getTime() - 86400000)
     sliderOffset.value = -window.innerWidth
     isSliding.value = false

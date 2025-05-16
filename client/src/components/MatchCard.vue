@@ -1,15 +1,17 @@
 <template>
   <div class="card">
-    <div class="status">{{ match.status }}</div>
+    <div class="status">{{ matchSummary.status_text }}</div>
     <div class="teams">
       <div class="team">
-        <img :src="match.awayLogo" width="50" />
-        <div>{{ match.away }}</div>
+        <img :src="matchSummary.away_logo" width="50" />
+        <div>{{ matchSummary.away_team }}</div>
       </div>
-      <div>-</div>
+      <div v-if="scoreDisplay" class="score">{{ matchSummary.away_score }}</div>
+      <div class="vs">-</div>
+      <div v-if="scoreDisplay" class="score">{{ matchSummary.home_score }}</div>
       <div class="team">
-        <img :src="match.homeLogo" width="50" />
-        <div>{{ match.home }}</div>
+        <img :src="matchSummary.home_logo" width="50" />
+        <div>{{ matchSummary.home_team }}</div>
       </div>
     </div>
   </div>
@@ -17,16 +19,12 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
+import { MatchSummary } from '@/types/MatchSummary';
 
-interface Match {
-  away: string
-  home: string
-  status: string
-  awayLogo: string
-  homeLogo: string
-}
-
-defineProps<{ match: Match }>()
+defineProps<{ 
+  matchSummary: MatchSummary
+  scoreDisplay: boolean
+ }>()
 </script>
 
 <style scoped>
@@ -40,6 +38,7 @@ defineProps<{ match: Match }>()
 }
 
 .status {
+  font-size: 20px;
   text-align: center;
   font-weight: bold;
 }
@@ -50,5 +49,18 @@ defineProps<{ match: Match }>()
 }
 .team {
   text-align: center;
+}
+
+.score {
+  font-size: 30px;
+  color: #363636;
+  font-weight: bold;
+  text-align: center;
+}
+
+.vs {
+  font-size: 30px;
+  color: #888;
+  padding: 0 8px;
 }
 </style>

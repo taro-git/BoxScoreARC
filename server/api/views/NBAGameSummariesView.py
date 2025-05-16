@@ -6,7 +6,7 @@ from ..services.nba_api.GetGameSummariesService import GetGameSummariesService
 from ..serializers.nba_api.GameSummarySerializer import GameSummarySerializer
 
 
-class NBAGamesView(APIView):
+class NBAGameSummariesView(APIView):
     def get(self, request):
         try:
             date_str = request.query_params.get('date')

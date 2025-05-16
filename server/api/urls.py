@@ -1,8 +1,8 @@
 from django.urls import path
 from .views.clickhouse_test import clickhouse_test
-from .views.nbaapi_test import NBAGamesView
+from .views.NBAGameSummariesView import NBAGameSummariesView
 
 urlpatterns = [
     path('api/clickhouse-test/', clickhouse_test),
-    path('api/nbaapi-test/', NBAGamesView.as_view()),
+    path('api/nba/game-summaries/', NBAGameSummariesView.as_view()),
 ]
