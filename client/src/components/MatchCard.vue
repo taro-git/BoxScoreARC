@@ -6,9 +6,9 @@
         <img :src="matchSummary.away_logo" width="50" />
         <div>{{ matchSummary.away_team }}</div>
       </div>
-      <div v-if="scoreDisplay" class="score">{{ matchSummary.away_score }}</div>
+      <div v-if="scoreDisplay" class="score">{{ matchSummary.away_score ?? 0 }}</div>
       <div class="vs">-</div>
-      <div v-if="scoreDisplay" class="score">{{ matchSummary.home_score }}</div>
+      <div v-if="scoreDisplay" class="score">{{ matchSummary.home_score ?? 0 }}</div>
       <div class="team">
         <img :src="matchSummary.home_logo" width="50" />
         <div>{{ matchSummary.home_team }}</div>
@@ -19,7 +19,8 @@
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import { MatchSummary } from '@/types/MatchSummary';
+
+import type { MatchSummary } from '@/types/MatchSummary';
 
 defineProps<{ 
   matchSummary: MatchSummary

@@ -22,7 +22,7 @@ const props = defineProps<{
   selectedDate: Date
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'update-date', date: Date): void
 }>()
 
@@ -73,7 +73,9 @@ const selectedMonth = computed(() =>
 <style scoped>
 .calendar-wrapper {
   text-align: center;
-  padding: 10px;
+  padding: 10px 0px;
+  border-bottom: var(--border);
+  background-color: var(--dark-backgroud-color);
 }
 
 .month {
@@ -84,7 +86,6 @@ const selectedMonth = computed(() =>
 .scroll-container {
   display: flex;
   overflow-x: auto;
-  gap: 10px;
   padding: 5px 0;
   scrollbar-width: none; /* Firefox */
 }
@@ -104,6 +105,7 @@ const selectedMonth = computed(() =>
   font-size: 14px;
   border: 1px solid transparent;
   transition: all 0.2s ease;
+  width: 25px;
 }
 
 .date.selected {

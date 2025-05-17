@@ -51,9 +51,9 @@ const onSelect = (date: Date) => {
 }
 
 .calendar-popup {
-  background-color: white;
+  background-color: #fff;
   padding: 16px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.9);
 }
 </style>

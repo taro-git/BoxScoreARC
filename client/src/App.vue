@@ -20,29 +20,23 @@
 .app {
   display: flex;
   flex-direction: column;
-  max-height: 100vh;
+  height: 100vh;
 }
 
 .footer {
   display: flex;
   justify-content: space-around;
-  background-color: #0a2c64;
+  background-color: var(--footer-backgroud-color);
   padding: 10px 0;
-  color: white;
   font-size: 12px;
-  height: 38px;
-  border-top: 1px solid #ccc;
+  height: var(--footer-height);
+  border-top: var(--border);
   flex-shrink: 0; /* フッターが縮小しない */
 }
 
-.nav {
-  text-align: center;
-  text-decoration: none;
-  color: white;
-}
-
-.nav.router-link-active {
+.nav{
   color: #fff;
-  font-weight: bold;
+  text-decoration: none;
+  text-align: center;
 }
 </style>
