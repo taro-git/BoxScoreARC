@@ -212,6 +212,9 @@ const {
 
 
 .no-game {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: bold;
   text-align: center;
 }
 

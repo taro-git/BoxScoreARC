@@ -32,7 +32,7 @@ defineProps<{
 .card {
   background: white;
   color: black;
-  margin: 5px;
+  margin: 7px 14px;
   border-radius: 12px;
   padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* 任意：少し立体感を出す */
