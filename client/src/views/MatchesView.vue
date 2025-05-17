@@ -19,22 +19,24 @@
       @close="showPopup = false"
     />
 
-    <div
-      class="match-scroll"
-      @touchstart="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
-    >
+    <div class="match-slider-container" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
       <div
-        class="match-slider"
+        class="match-page"
+        v-for="(dayMatches, i) in matchSummariesSets"
+        :key="i"
         :style="{
-          transform: `translateX(${sliderOffset}px)`,
-          transition: isSliding ? 'transform 0.3s ease' : 'none'
+          transform: `translateX(${offsets[i]}px)`,
+          transition: isSliding ? `transform ${slideAnimationDurationSec}s ease` : 'none',
+          overflowY: i === 1 ? 'auto' : 'hidden'
         }"
       >
-        <div v-for="(dayMatches, i) in slideMatchSets" :key="i" class="match-page">
-          <MatchCard v-for="(match, j) in dayMatches" :key="j" :matchSummary="match" :scoreDisplay="true" />
-        </div>
+        <MatchCard
+          v-for="(match, j) in dayMatches"
+          :key="j"
+          :match-summary="match"
+          :score-display="true"
+        />
+        <div v-if="dayMatches.length === 0" class="no-game">no game</div>
       </div>
     </div>
   </div>
@@ -42,17 +44,20 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+
 import MatchCard from '@/components/MatchCard.vue'
 import CalendarScroller from '@/components/CalendarScroller.vue'
 import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
-import { MatchSummary } from '@/types/MatchSummary'
+
 import { getMatchSummaries } from '@/services/getMatchSummariesService'
+import { swipeService } from '@/services/swipeService'
+import { CacheService } from '@/services/cacheService'
+
+import type { MatchSummary } from '@/types/MatchSummary'
 
 const selectedDate = ref(new Date())
 const showPopup = ref(false)
-const isSliding = ref(false)
-const sliderOffset = ref(-window.innerWidth) // 中央を初期表示
-const slideMatchSets = ref<MatchSummary[][]>([])
+const matchSummariesSets = ref<MatchSummary[][]>([])
 
 const updateDate = (date: Date) => {
   selectedDate.value = date
@@ -67,108 +72,101 @@ const goToToday = () => {
   selectedDate.value = new Date()
 }
 
-const matchCache = new Map<number, MatchSummary[]>()
-const MAX_CACHE_DAYS = 100
+const catcheService = new CacheService<MatchSummary[]>({
+  removalPolicy: 'farthest',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getDistanceForFarthest: (time, dummy) => Math.abs(time - selectedDate.value.setHours(0, 0, 0, 0)),
+})
 
-const updateSlideMatchSets = async () => {
+const updateMatchSummariesSets = async () => {
   const base = selectedDate.value
   const prev = new Date(base)
   const next = new Date(base)
   prev.setDate(prev.getDate() - 1)
   next.setDate(next.getDate() + 1)
 
-  const getOrFetch = async (date: Date): Promise<MatchSummary[]> => {
-    const time = date.setHours(0, 0, 0, 0)
-    const cached = matchCache.get(time)
-    if (cached !== undefined) return cached
-    const data = await getMatchSummaries(date)
-    matchCache.set(time, data)
-    if (matchCache.size > MAX_CACHE_DAYS) {
-    let farthestKey: number | null = null;
-    let maxDistance = -1;
-
-    for (const key of matchCache.keys()) {
-      const distance = Math.abs(key - base.setHours(0, 0, 0, 0));
-      if (distance > maxDistance) {
-        maxDistance = distance;
-        farthestKey = key;
-      }
-    }
-
-    if (farthestKey !== null) {
-      matchCache.delete(farthestKey);
-    }
-    }
-    return data
-  }
-
-  slideMatchSets.value = await Promise.all([
-    getOrFetch(prev),
-    getOrFetch(base),
-    getOrFetch(next)
+  matchSummariesSets.value = await Promise.all([
+    catcheService.getOrFetch(prev.setHours(0, 0, 0, 0), () => getMatchSummaries(prev)),
+    catcheService.getOrFetch(base.setHours(0, 0, 0, 0), () => getMatchSummaries(base)),
+    catcheService.getOrFetch(next.setHours(0, 0, 0, 0), () => getMatchSummaries(next))
   ])
 }
 
-watch(selectedDate, updateSlideMatchSets, { immediate: true })
-
-let startX = 0
-const onTouchStart = (e: TouchEvent) => {
-  startX = e.touches[0].clientX
-  isSliding.value = false
-}
-
-const onTouchMove = (e: TouchEvent) => {
-  const currentX = e.touches[0].clientX
-  sliderOffset.value = -window.innerWidth + (currentX - startX)
-}
-
-const onTouchEnd = () => {
-  const delta = sliderOffset.value + window.innerWidth
-
-  if (delta < -100) {
-    slideToNextDay()
-  } else if (delta > 100) {
-    slideToPreviousDay()
-  } else {
-    isSliding.value = true
-    sliderOffset.value = -window.innerWidth
-  }
-}
+watch(selectedDate, updateMatchSummariesSets, { immediate: true })
 
 const slideToNextDay = () => {
-  isSliding.value = true
-  sliderOffset.value = -window.innerWidth * 2
-  setTimeout(() => {
-    slideMatchSets.value = [
-      ...slideMatchSets.value.slice(1),
-      []
-    ]
-    selectedDate.value = new Date(selectedDate.value.getTime() + 86400000)
-    sliderOffset.value = -window.innerWidth
-    isSliding.value = false
-  }, 300)
+  matchSummariesSets.value = [
+    ...matchSummariesSets.value.slice(1),
+    []
+  ]
+  selectedDate.value = new Date(selectedDate.value.getTime() + 86400000)
 }
 
 const slideToPreviousDay = () => {
-  isSliding.value = true
-  sliderOffset.value = 0
-  setTimeout(() => {
-    slideMatchSets.value = [
-      [],
-      ...slideMatchSets.value.slice(0, 2),
-    ]
-    selectedDate.value = new Date(selectedDate.value.getTime() - 86400000)
-    sliderOffset.value = -window.innerWidth
-    isSliding.value = false
-  }, 300)
+  matchSummariesSets.value = [
+    [],
+    ...matchSummariesSets.value.slice(0, 2),
+  ]
+  selectedDate.value = new Date(selectedDate.value.getTime() - 86400000)
 }
+
+const temp = -window.innerWidth
+const {
+  offsets,
+  isSliding,
+  slideAnimationDurationSec,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd
+} = swipeService(slideToNextDay, slideToPreviousDay, [
+  {
+    initialPosition: temp,
+    offset: {
+      beforeOnSwipeFuncExe: {
+        left: temp,
+        right: -temp
+      },
+      afterOnSwipeFuncExe: {
+        left: 0,
+        right: 0
+      }
+    }
+  },
+  {
+    initialPosition: 0,
+    offset: {
+      beforeOnSwipeFuncExe: {
+        left: temp,
+        right: -temp
+      },
+      afterOnSwipeFuncExe: {
+        left: 0,
+        right: 0
+      }
+    }
+  },
+  {
+    initialPosition: -temp,
+    offset: {
+      beforeOnSwipeFuncExe: {
+        left: temp,
+        right: -temp
+      },
+      afterOnSwipeFuncExe: {
+        left: 0,
+        right: 0
+      }
+    }
+  },
+])
+
 </script>
 
 <style scoped>
 .container {
-  background-color: #081C45;
-  color: white;
-  height: calc(100vh - 76px);
+  background-color: var(--main-backgroud-color);
+  color: #fff;
+  height: calc(100% - var(--footer-height));
   display: flex;
   flex-direction: column;
 }
@@ -176,7 +174,7 @@ const slideToPreviousDay = () => {
 .header {
   display: flex;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: 12px 0px;
   font-size: 20px;
   align-items: center;
 }
@@ -184,37 +182,37 @@ const slideToPreviousDay = () => {
 .header-button {
   background: none;
   border: none;
-  color: white;
+  color: #fff;
   font-size: 20px;
   width: 70px;
   align-items: center;
   cursor: pointer;
 }
 
-.match-scroll {
+.match-slider-container {
   flex: 1;
   overflow-x: hidden;
-  overflow-y: auto;
   position: relative;
-  padding-bottom: 80px;
 }
 
-.match-scroll::-webkit-scrollbar {
-  display: none;                  /* Chrome, Safari, Opera */
-}
-
-.match-slider {
-  display: flex;
-  width: 300vw;
-  will-change: transform;
+.match-slider-container::-webkit-scrollbar {
+  display: none;
 }
 
 .match-page {
   width: 100vw;
-  padding: 0;
-  margin-right: 15px;
+  height: 100%;
   box-sizing: border-box;
+  will-change: transform;
   display: flex;
   flex-direction: column;
+  position: absolute;
+  overflow-x: hidden;
 }
+
+
+.no-game {
+  text-align: center;
+}
+
 </style>
