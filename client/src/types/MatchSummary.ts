@@ -7,6 +7,7 @@ export interface MatchSummary {
   away_logo: string
   away_score?: number
   status_text: string
+  status_id: number
   live_period: number
   live_clock: string
 }

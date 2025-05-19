@@ -82,12 +82,11 @@ const goToToday = () => {
 
 const catcheService = new CacheService<MatchSummary[]>({
   removalPolicy: 'farthest',
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getDistanceForFarthest: (time, matchSummaryList) => Math.abs(time - new Date(selectedDate.value).setHours(0, 0, 0, 0)),
-  isValidValue: (data: unknown): data is MatchSummary[] => {
+  getDistanceForFarthest: (time) => Math.abs(time - new Date(selectedDate.value).setHours(0, 0, 0, 0)),
+  cacheFilter: (_, data: unknown): data is MatchSummary[] => {
     if (!Array.isArray(data)) return false
     else if (data.length === 0) return true
-    else return data.every(item => isMatchSummary(item))
+    else return data.every(item => isMatchSummary(item) && (item as MatchSummary).status_id !== 2)
   }
 })
 

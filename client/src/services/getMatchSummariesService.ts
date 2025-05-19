@@ -29,7 +29,7 @@ export const isMatchSummary = (item : any) => {
   typeof item.away_team === 'string' &&
   typeof item.away_logo === 'string' &&
   (typeof item.away_score === 'number' || item.away_score === null) &&
-  typeof item.status_id === 'number' && item.status_id !== 2 &&
+  typeof item.status_id === 'number' &&
   typeof item.status_text === 'string' &&
   typeof item.live_period === 'number' &&
   typeof item.live_clock === 'string'

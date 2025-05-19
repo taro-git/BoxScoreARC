@@ -5,7 +5,7 @@ interface CommonCacheOptions<T> {
   maxItems?: number
   baseKey?: number
   ttlSeconds?: number
-  isValidValue?: (value: unknown) => value is T
+  cacheFilter?: (key: number, value: unknown) => boolean
 }
 
 interface FarthestCacheOptions<T> extends CommonCacheOptions<T> {
@@ -34,7 +34,7 @@ export class CacheService<T> {
   private removalPolicy: RemovalPolicy
   private ttlSeconds?: number
   private getDistanceForFarthest: (key: number, value: T) => number
-  private isValidValue?: (value: unknown) => value is T
+  private cacheFilter?: (key: number, value: unknown) => boolean
 
   constructor(options: CacheOptions<T> = {}) {
     this.maxItems = options.maxItems ?? 100
@@ -43,7 +43,7 @@ export class CacheService<T> {
     this.getDistanceForFarthest = options.getDistanceForFarthest ?? (() => {
       throw new Error('getDistanceForFarthest was called, but no implementation was provided.')
     })
-    this.isValidValue = options.isValidValue
+    this.cacheFilter = options.cacheFilter
   }
 
   async getOrFetch(key: number, fetcher: () => Promise<T>): Promise<T> {
@@ -66,7 +66,7 @@ export class CacheService<T> {
     }
 
     const value = await fetcher()
-    if (this.isValidValue === undefined || (this.isValidValue && this.isValidValue(value))){
+    if (this.cacheFilter === undefined || (this.cacheFilter && this.cacheFilter(key, value))){
       this.cache.set(key, {
         value,
         timestamp: now,
