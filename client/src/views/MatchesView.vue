@@ -30,7 +30,6 @@
           overflowY: dayOffset === 0 ? 'auto' : 'hidden'
         }"
       >
-      <!-- MYTODO エラーコンポネントの作成 -->
         <div class="loading-wrapper" v-if="matchSummariesSets.isLoadingMap.value[dayOffset]" >
           <LoadingSpinner />
         </div>
