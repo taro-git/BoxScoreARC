@@ -3,6 +3,9 @@
   --main-backgroud-color: #081C45;
   --dark-backgroud-color: #07183c;
   --footer-backgroud-color: #0a2c64;
+  --error-backgroud-color: #fce8e6;
+  --error-border: 1px solid #f5c6cb; 
+  --error-font-color: #b00020;
   --border: 1px solid #cfcfcf;
 }
 

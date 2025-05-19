@@ -34,7 +34,7 @@
         <div class="loading-wrapper" v-if="matchSummariesSets.isLoadingMap.value[dayOffset]" >
           <LoadingSpinner />
         </div>
-        <div v-else-if="matchSummariesSets.error.value[dayOffset].isError">{{ matchSummariesSets.error.value[dayOffset].errorMessage }}</div>
+        <ServerError v-else-if="matchSummariesSets.error.value[dayOffset].isError" :error-message="matchSummariesSets.error.value[dayOffset].errorMessage" />
         <template v-else>
           <div v-if="matchSummariesSets.matchSummaryMap.value[dayOffset].length === 0" class="no-game">no game</div>
           <MatchCard
@@ -56,6 +56,7 @@ import MatchCard from '@/components/MatchCard.vue'
 import CalendarScroller from '@/components/CalendarScroller.vue'
 import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import ServerError from '@/components/ServerError.vue'
 
 import { getMatchSummaries, isMatchSummary } from '@/services/getMatchSummariesService'
 import { swipeService } from '@/services/swipeService'
