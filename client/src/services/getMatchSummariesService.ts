@@ -17,3 +17,20 @@ export const getMatchSummaries = async (date: Date): Promise<MatchSummary[]> => 
   }})
   return response.data
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const isMatchSummary = (item : any) => {
+  return typeof item === 'object' &&
+  item !== null &&
+  typeof item.game_id === 'string' &&
+  typeof item.home_team === 'string' &&
+  typeof item.home_logo === 'string' &&
+  (typeof item.home_score === 'number' || item.home_score === null) &&
+  typeof item.away_team === 'string' &&
+  typeof item.away_logo === 'string' &&
+  (typeof item.away_score === 'number' || item.away_score === null) &&
+  typeof item.status_id === 'number' && item.status_id !== 2 &&
+  typeof item.status_text === 'string' &&
+  typeof item.live_period === 'number' &&
+  typeof item.live_clock === 'string'
+}

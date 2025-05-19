@@ -15,28 +15,33 @@
     <MonthlyCalendar
       v-if="showPopup"
       :selected-date="selectedDate"
-      @select="onSelectDate"
+      @select="selectDateOnMonthlyCalendar"
       @close="showPopup = false"
     />
 
     <div class="match-slider-container" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
       <div
         class="match-page"
-        v-for="(dayMatches, i) in matchSummariesSets"
-        :key="i"
+        v-for="dayOffset in matchSummariesSets.dayOffsetsList"
+        :key="dayOffset"
         :style="{
-          transform: `translateX(${offsets[i]}px)`,
+          transform: `translateX(${offsets[dayOffset]}px)`,
           transition: isSliding ? `transform ${slideAnimationDurationSec}s ease` : 'none',
-          overflowY: i === 1 ? 'auto' : 'hidden'
+          overflowY: dayOffset === 0 ? 'auto' : 'hidden'
         }"
       >
-        <MatchCard
-          v-for="(match, j) in dayMatches"
-          :key="j"
-          :match-summary="match"
-          :score-display="true"
-        />
-        <div v-if="dayMatches.length === 0" class="no-game">no game</div>
+      <!-- MYTODO ローディングコンポネントとエラーコンポネントの作成 -->
+        <div v-if="matchSummariesSets.isLoadingMap.value[dayOffset]">loading</div>
+        <div v-else-if="matchSummariesSets.error.value[dayOffset].isError">{{ matchSummariesSets.error.value[dayOffset].errorMessage }}</div>
+        <template v-else>
+          <div v-if="matchSummariesSets.matchSummaryMap.value[dayOffset].length === 0" class="no-game">no game</div>
+          <MatchCard
+            v-for="(match, j) in matchSummariesSets.matchSummaryMap.value[dayOffset]"
+            :key="j"
+            :match-summary="match"
+            :score-display="true"
+          />
+        </template>
       </div>
     </div>
   </div>
@@ -49,68 +54,81 @@ import MatchCard from '@/components/MatchCard.vue'
 import CalendarScroller from '@/components/CalendarScroller.vue'
 import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
 
-import { getMatchSummaries } from '@/services/getMatchSummariesService'
+import { getMatchSummaries, isMatchSummary } from '@/services/getMatchSummariesService'
 import { swipeService } from '@/services/swipeService'
 import { CacheService } from '@/services/cacheService'
 
 import type { MatchSummary } from '@/types/MatchSummary'
+import { MatchSummariesSets } from '@/types/MatchSummariesSets'
 
 const selectedDate = ref(new Date())
 const showPopup = ref(false)
-const matchSummariesSets = ref<MatchSummary[][]>([])
+const numberOfPreviousDays = 1
+const numberOfFutureDays = 1
+const matchSummariesSets = new MatchSummariesSets(numberOfPreviousDays, numberOfFutureDays)
 
 const updateDate = (date: Date) => {
   selectedDate.value = date
 }
 
-const onSelectDate = (date: Date) => {
-  selectedDate.value = date
+const selectDateOnMonthlyCalendar = (date: Date) => {
+  updateDate(date)
   showPopup.value = false
 }
 
 const goToToday = () => {
-  selectedDate.value = new Date()
+  updateDate(new Date())
 }
 
 const catcheService = new CacheService<MatchSummary[]>({
   removalPolicy: 'farthest',
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getDistanceForFarthest: (time, dummy) => Math.abs(time - selectedDate.value.setHours(0, 0, 0, 0)),
+  getDistanceForFarthest: (time, matchSummaryList) => Math.abs(time - new Date(selectedDate.value).setHours(0, 0, 0, 0)),
+  isValidValue: (data: unknown): data is MatchSummary[] => {
+    if (!Array.isArray(data)) return false
+    else if (data.length === 0) return true
+    else return data.every(item => isMatchSummary(item))
+  }
 })
 
-const updateMatchSummariesSets = async () => {
+const updateMatchSummariesSets = () => {
   const base = selectedDate.value
-  const prev = new Date(base)
-  const next = new Date(base)
-  prev.setDate(prev.getDate() - 1)
-  next.setDate(next.getDate() + 1)
+  let targetDate: Date
+  for (let dayOffset of matchSummariesSets.dayOffsetsList) {
 
-  matchSummariesSets.value = await Promise.all([
-    catcheService.getOrFetch(prev.setHours(0, 0, 0, 0), () => getMatchSummaries(prev)),
-    catcheService.getOrFetch(base.setHours(0, 0, 0, 0), () => getMatchSummaries(base)),
-    catcheService.getOrFetch(next.setHours(0, 0, 0, 0), () => getMatchSummaries(next))
-  ])
+    // initialize
+    matchSummariesSets.isLoadingMap.value[dayOffset] = true
+    matchSummariesSets.error.value[dayOffset].isError = false
+    matchSummariesSets.error.value[dayOffset].errorMessage = ''
+    matchSummariesSets.matchSummaryMap.value[dayOffset] = []
+
+    // update
+    targetDate = new Date(base)
+    targetDate.setDate(targetDate.getDate() + dayOffset)
+    catcheService.getOrFetch(new Date(targetDate).setHours(0, 0, 0, 0), () => getMatchSummaries(targetDate))
+      .then((response) => {
+        matchSummariesSets.matchSummaryMap.value[dayOffset] = response
+      })
+      .catch((error) => {
+        matchSummariesSets.error.value[dayOffset].isError = true
+        matchSummariesSets.error.value[dayOffset].errorMessage = error.toString()
+      })
+      .finally(() => {
+        matchSummariesSets.isLoadingMap.value[dayOffset] = false
+      })
+  }
 }
 
 watch(selectedDate, updateMatchSummariesSets, { immediate: true })
 
 const slideToNextDay = () => {
-  matchSummariesSets.value = [
-    ...matchSummariesSets.value.slice(1),
-    []
-  ]
   selectedDate.value = new Date(selectedDate.value.getTime() + 86400000)
 }
 
 const slideToPreviousDay = () => {
-  matchSummariesSets.value = [
-    [],
-    ...matchSummariesSets.value.slice(0, 2),
-  ]
   selectedDate.value = new Date(selectedDate.value.getTime() - 86400000)
 }
 
-const temp = -window.innerWidth
 const {
   offsets,
   isSliding,
@@ -118,47 +136,23 @@ const {
   onTouchStart,
   onTouchMove,
   onTouchEnd
-} = swipeService(slideToNextDay, slideToPreviousDay, [
-  {
-    initialPosition: temp,
+} = swipeService(slideToNextDay, slideToPreviousDay, matchSummariesSets.dayOffsetsList.map(dayOffset => {
+  const windowWidth = window.innerWidth
+  return {
+    key: dayOffset,
+    initialPosition: windowWidth*dayOffset,
     offset: {
       beforeOnSwipeFuncExe: {
-        left: temp,
-        right: -temp
+        left: -windowWidth,
+        right: windowWidth
       },
       afterOnSwipeFuncExe: {
         left: 0,
         right: 0
       }
     }
-  },
-  {
-    initialPosition: 0,
-    offset: {
-      beforeOnSwipeFuncExe: {
-        left: temp,
-        right: -temp
-      },
-      afterOnSwipeFuncExe: {
-        left: 0,
-        right: 0
-      }
-    }
-  },
-  {
-    initialPosition: -temp,
-    offset: {
-      beforeOnSwipeFuncExe: {
-        left: temp,
-        right: -temp
-      },
-      afterOnSwipeFuncExe: {
-        left: 0,
-        right: 0
-      }
-    }
-  },
-])
+  }
+}))
 
 </script>
 

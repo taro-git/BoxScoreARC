@@ -10,6 +10,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const data = ref<any | null>(null)
 const error = ref<string | null>(null)
 axios.get('http://172.16.0.62:1026/api/nbaapi-test?date=20250514')
