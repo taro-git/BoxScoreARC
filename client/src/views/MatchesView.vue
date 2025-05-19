@@ -30,8 +30,10 @@
           overflowY: dayOffset === 0 ? 'auto' : 'hidden'
         }"
       >
-      <!-- MYTODO ローディングコンポネントとエラーコンポネントの作成 -->
-        <div v-if="matchSummariesSets.isLoadingMap.value[dayOffset]">loading</div>
+      <!-- MYTODO エラーコンポネントの作成 -->
+        <div class="loading-wrapper" v-if="matchSummariesSets.isLoadingMap.value[dayOffset]" >
+          <LoadingSpinner />
+        </div>
         <div v-else-if="matchSummariesSets.error.value[dayOffset].isError">{{ matchSummariesSets.error.value[dayOffset].errorMessage }}</div>
         <template v-else>
           <div v-if="matchSummariesSets.matchSummaryMap.value[dayOffset].length === 0" class="no-game">no game</div>
@@ -53,6 +55,7 @@ import { ref, watch } from 'vue'
 import MatchCard from '@/components/MatchCard.vue'
 import CalendarScroller from '@/components/CalendarScroller.vue'
 import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 import { getMatchSummaries, isMatchSummary } from '@/services/getMatchSummariesService'
 import { swipeService } from '@/services/swipeService'
@@ -203,6 +206,12 @@ const {
   overflow-x: hidden;
 }
 
+.loading-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 
 .no-game {
   margin-top: 10px;
