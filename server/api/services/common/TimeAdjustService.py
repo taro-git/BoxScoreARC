@@ -25,4 +25,7 @@ class TimeAdjustService:
 
     def convert_tz_to_est(self, datetime: datetime) -> datetime:
         return datetime.astimezone(ZoneInfo("America/New_York"))
+    
+    def today_jst(self) -> datetime.date:
+        return datetime.now(ZoneInfo("Asia/Tokyo")).date()
 

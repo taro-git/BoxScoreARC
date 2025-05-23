@@ -3,7 +3,8 @@ from dataclasses import dataclass, field
 
 TeamAbbreviation = Literal[
     'BOS', 'BKN', 'NYK', 'PHI', 'TOR', 'CHI', 'CLE', 'DET', 'IND', 'MIL', 'ATL', 'CHA', 'MIA', 'ORL', 'WAS',
-    'DEN', 'MIN', 'OKC', 'POR', 'UTA', 'GSW', 'LAC', 'LAL', 'PHX', 'SAC', 'DAL', 'HOU', 'MEM', 'NOP', 'SAS'
+    'DEN', 'MIN', 'OKC', 'POR', 'UTA', 'GSW', 'LAC', 'LAL', 'PHX', 'SAC', 'DAL', 'HOU', 'MEM', 'NOP', 'SAS',
+    'Unknown'
 ]
 
 TEAM_LOGO = {
@@ -39,22 +40,22 @@ TEAM_LOGO = {
     'SAS': 'https://cdn.nba.com/logos/nba/1610612759/global/L/logo.svg'
 }
 
-@dataclass
+@dataclass(kw_only=True)
 class GameSummary:
     game_id: str
-    home_team: TeamAbbreviation
+    home_team: TeamAbbreviation = 'Unknown'
     home_logo: str = field(init=False)
-    home_score: int
-    away_team: TeamAbbreviation
+    home_score: int = 0
+    away_team: TeamAbbreviation = 'Unknown'
     away_logo: str = field(init=False)
-    away_score: int
-    game_sequence: int
-    status_id: int # 1: scheduled, 2: game started, 3: game finished
-    status_text: str # status_id=1 -> h:mm pm/am ET, status_id=2 -> 1st Qtr etc., status_id=3 -> Final
-    live_period: int
-    live_clock: str
+    away_score: int = 0
+    game_sequence: int = 0
+    status_id: int = 3 # 1: scheduled, 2: game started, 3: game finished
+    status_text: str = 'Final' # status_id=1 -> h:mm pm/am ET, status_id=2 -> 1st Qtr etc., status_id=3 -> Final
+    live_period: int = 4
+    live_clock: str = '00:00'
 
     def __post_init__(self):
-        self.home_logo = TEAM_LOGO[self.home_team]
-        self.away_logo = TEAM_LOGO[self.away_team]
+        self.home_logo = TEAM_LOGO.get(self.home_team, '')
+        self.away_logo = TEAM_LOGO.get(self.away_team,'')
 
