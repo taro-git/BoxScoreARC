@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from ..services.nba_api.GetGameSummariesService import GetGameSummariesService
+from ..services.common.GetGameSummariesService import GetGameSummariesService
 from ..serializers.nba_api.GameSummarySerializer import GameSummarySerializer
 
 

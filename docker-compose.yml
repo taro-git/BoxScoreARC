@@ -30,6 +30,7 @@ services:
       - "9000:9000"  # Native
     restart: "always"
     volumes:
+      - clickhouse_data:/var/lib/clickhouse
       - ./database/clickhouse/config/user.xml:/etc/clickhouse-server/users.d/default-user.xml:ro
       - ./database/clickhouse/config/custom_config.xml:/etc/clickhouse-server/config.d/custom_config.xml:ro
 
