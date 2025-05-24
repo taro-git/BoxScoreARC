@@ -1,12 +1,12 @@
 import { Ref, ref } from 'vue'
 
-import type { MatchSummary } from '@/types/MatchSummary'
+import type { GameSummary } from '@/types/GameSummary'
 
-export class MatchSummariesSets {
+export class GameSummariesSets {
   numberOfPreviousDays: number
   numberOfFutureDays: number
   dayOffsetsList: number[]
-  matchSummaryMap: Ref<{ [key: number]: MatchSummary[]}>
+  gameSummaryMap: Ref<{ [key: number]: GameSummary[]}>
   isLoadingMap: Ref<{ [key: number]: boolean }>
   error: Ref<{ [key: number]: { isError: boolean, errorMessage: string } }>
 
@@ -14,12 +14,12 @@ export class MatchSummariesSets {
     this.numberOfPreviousDays = numberOfPreviousDays
     this.numberOfFutureDays = numberOfFutureDays
     this.dayOffsetsList = Array.from({ length: this.numberOfFutureDays + this.numberOfPreviousDays + 1 }, (_, i) => i - this.numberOfPreviousDays)
-    this.matchSummaryMap = ref({})
+    this.gameSummaryMap = ref({})
     this.isLoadingMap = ref({})
     this.error = ref({})
 
     for (let i = -numberOfPreviousDays; i <= numberOfFutureDays; i++) {
-      this.matchSummaryMap.value[i] = []
+      this.gameSummaryMap.value[i] = []
       this.isLoadingMap.value[i] = true
       this.error.value[i] = {
         isError: false,

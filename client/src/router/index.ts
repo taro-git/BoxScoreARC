@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import MatchesView from '@/views/MatchesView.vue'
+import GamesView from '@/views/GamesView.vue'
 import TestClickhouse from '@/views/TestClickhouse.vue'
 import TestNBAAPI from '@/views/TestNBAAPI.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
-    path: '/matches',
-    name: 'Matches',
-    component: MatchesView
+    path: '/games',
+    name: 'games',
+    component: GamesView
   },
   {
     path: '/news',

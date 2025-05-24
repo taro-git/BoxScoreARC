@@ -36,3 +36,4 @@ services:
 
 volumes:
   clickhouse_data:
+    name: clickhouse_data 

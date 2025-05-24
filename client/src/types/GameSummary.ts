@@ -1,4 +1,4 @@
-export interface MatchSummary {
+export interface GameSummary {
   game_id: string
   home_team: string
   home_logo: string

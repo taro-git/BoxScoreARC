@@ -1,4 +1,4 @@
-import { MatchSummary } from '@/types/MatchSummary'
+import { GameSummary } from '@/types/GameSummary'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://172.16.0.62:1026/api/nba'
@@ -10,7 +10,7 @@ function formatDateToYYYYMMDD(dateArg: Date): string {
   return `${year}${month}${date}`
 }
 
-export const getMatchSummaries = async (date: Date): Promise<MatchSummary[]> => {
+export const getgameSummaries = async (date: Date): Promise<GameSummary[]> => {
   const response = await axios.get(`${API_BASE_URL}/game-summaries/`, {
     params: {
       date: formatDateToYYYYMMDD(date)
@@ -19,7 +19,7 @@ export const getMatchSummaries = async (date: Date): Promise<MatchSummary[]> => 
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isMatchSummary = (item : any) => {
+export const isgameSummary = (item : any) => {
   return typeof item === 'object' &&
   item !== null &&
   typeof item.game_id === 'string' &&

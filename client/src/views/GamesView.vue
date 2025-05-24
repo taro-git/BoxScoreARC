@@ -4,7 +4,7 @@
       <div>
         <button class="header-button" @click="goToToday">Today</button>
       </div>
-      <div>Matches</div>
+      <div>Games</div>
       <div>
         <button class="header-button" @click="showPopup = true">📅</button>
       </div>
@@ -19,10 +19,10 @@
       @close="showPopup = false"
     />
 
-    <div class="match-slider-container" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
+    <div class="game-slider-container" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
       <div
-        class="match-page"
-        v-for="dayOffset in matchSummariesSets.dayOffsetsList"
+        class="game-page"
+        v-for="dayOffset in gameSummariesSets.dayOffsetsList"
         :key="dayOffset"
         :style="{
           transform: `translateX(${offsets[dayOffset]}px)`,
@@ -30,16 +30,16 @@
           overflowY: dayOffset === 0 ? 'auto' : 'hidden'
         }"
       >
-        <div class="loading-wrapper" v-if="matchSummariesSets.isLoadingMap.value[dayOffset]" >
+        <div class="loading-wrapper" v-if="gameSummariesSets.isLoadingMap.value[dayOffset]" >
           <LoadingSpinner />
         </div>
-        <ServerError v-else-if="matchSummariesSets.error.value[dayOffset].isError" :error-message="matchSummariesSets.error.value[dayOffset].errorMessage" />
+        <ServerError v-else-if="gameSummariesSets.error.value[dayOffset].isError" :error-message="gameSummariesSets.error.value[dayOffset].errorMessage" />
         <template v-else>
-          <div v-if="matchSummariesSets.matchSummaryMap.value[dayOffset].length === 0" class="no-game">no game</div>
-          <MatchCard
-            v-for="(match, j) in matchSummariesSets.matchSummaryMap.value[dayOffset]"
+          <div v-if="gameSummariesSets.gameSummaryMap.value[dayOffset].length === 0" class="no-game">no game</div>
+          <gameCard
+            v-for="(game, j) in gameSummariesSets.gameSummaryMap.value[dayOffset]"
             :key="j"
-            :match-summary="match"
+            :game-summary="game"
             :score-display="true"
           />
         </template>
@@ -51,24 +51,24 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
-import MatchCard from '@/components/MatchCard.vue'
+import GameCard from '@/components/GameCard.vue'
 import CalendarScroller from '@/components/CalendarScroller.vue'
 import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ServerError from '@/components/ServerError.vue'
 
-import { getMatchSummaries, isMatchSummary } from '@/services/getMatchSummariesService'
+import { getgameSummaries, isgameSummary } from '@/services/getGameSummariesService'
 import { swipeService } from '@/services/swipeService'
 import { CacheService } from '@/services/cacheService'
 
-import type { MatchSummary } from '@/types/MatchSummary'
-import { MatchSummariesSets } from '@/types/MatchSummariesSets'
+import type { GameSummary } from '@/types/GameSummary'
+import { GameSummariesSets } from '@/types/GameSummariesSets'
 
 const selectedDate = ref(new Date())
 const showPopup = ref(false)
 const numberOfPreviousDays = 1
 const numberOfFutureDays = 1
-const matchSummariesSets = new MatchSummariesSets(numberOfPreviousDays, numberOfFutureDays)
+const gameSummariesSets = new GameSummariesSets(numberOfPreviousDays, numberOfFutureDays)
 
 const updateDate = (date: Date) => {
   selectedDate.value = date
@@ -83,20 +83,20 @@ const goToToday = () => {
   updateDate(new Date())
 }
 
-const catcheService = new CacheService<MatchSummary[]>({
+const catcheService = new CacheService<GameSummary[]>({
   removalPolicy: 'farthest',
   getDistanceForFarthest: (time) => Math.abs(time - new Date(selectedDate.value).setHours(0, 0, 0, 0)),
-  cacheFilter: (_, data: unknown): data is MatchSummary[] => {
+  cacheFilter: (_, data: unknown): data is GameSummary[] => {
     if (!Array.isArray(data)) return false
     else if (data.length === 0) return true
-    else return data.every(item => isMatchSummary(item) && (item as MatchSummary).status_id !== 2)
+    else return data.every(item => isgameSummary(item) && (item as GameSummary).status_id !== 2)
   }
 })
 
-const updateMatchSummariesSets = async () => {
+const updategameSummariesSets = async () => {
   const base = selectedDate.value
   let targetDate: Date
-  const sortedDayOffsets = [...matchSummariesSets.dayOffsetsList].sort((a, b) => {
+  const sortedDayOffsets = [...gameSummariesSets.dayOffsetsList].sort((a, b) => {
     if (a === 0) return -1
     if (b === 0) return 1
     return a - b
@@ -104,10 +104,10 @@ const updateMatchSummariesSets = async () => {
 
   for (const dayOffset of sortedDayOffsets) {
     // initialize
-    matchSummariesSets.isLoadingMap.value[dayOffset] = true
-    matchSummariesSets.error.value[dayOffset].isError = false
-    matchSummariesSets.error.value[dayOffset].errorMessage = ''
-    matchSummariesSets.matchSummaryMap.value[dayOffset] = []
+    gameSummariesSets.isLoadingMap.value[dayOffset] = true
+    gameSummariesSets.error.value[dayOffset].isError = false
+    gameSummariesSets.error.value[dayOffset].errorMessage = ''
+    gameSummariesSets.gameSummaryMap.value[dayOffset] = []
 
     // update
     targetDate = new Date(base)
@@ -116,21 +116,21 @@ const updateMatchSummariesSets = async () => {
     try {
       const response = await catcheService.getOrFetch(
         new Date(targetDate).setHours(0, 0, 0, 0),
-        () => getMatchSummaries(targetDate)
+        () => getgameSummaries(targetDate)
       )
-      matchSummariesSets.matchSummaryMap.value[dayOffset] = response
+      gameSummariesSets.gameSummaryMap.value[dayOffset] = response
     } catch (error) {
-      matchSummariesSets.error.value[dayOffset].isError = true
-      matchSummariesSets.error.value[dayOffset].errorMessage =
+      gameSummariesSets.error.value[dayOffset].isError = true
+      gameSummariesSets.error.value[dayOffset].errorMessage =
         error instanceof Error ? error.message : String(error)
     } finally {
-      matchSummariesSets.isLoadingMap.value[dayOffset] = false
+      gameSummariesSets.isLoadingMap.value[dayOffset] = false
     }
   }
 }
 
 
-watch(selectedDate, updateMatchSummariesSets, { immediate: true })
+watch(selectedDate, updategameSummariesSets, { immediate: true })
 
 const slideToNextDay = () => {
   selectedDate.value = new Date(selectedDate.value.getTime() + 86400000)
@@ -147,7 +147,7 @@ const {
   onTouchStart,
   onTouchMove,
   onTouchEnd
-} = swipeService(slideToNextDay, slideToPreviousDay, matchSummariesSets.dayOffsetsList.map(dayOffset => {
+} = swipeService(slideToNextDay, slideToPreviousDay, gameSummariesSets.dayOffsetsList.map(dayOffset => {
   const windowWidth = window.innerWidth
   return {
     key: dayOffset,
@@ -194,17 +194,17 @@ const {
   cursor: pointer;
 }
 
-.match-slider-container {
+.game-slider-container {
   flex: 1;
   overflow-x: hidden;
   position: relative;
 }
 
-.match-slider-container::-webkit-scrollbar {
+.game-slider-container::-webkit-scrollbar {
   display: none;
 }
 
-.match-page {
+.game-page {
   width: 100vw;
   height: 100%;
   box-sizing: border-box;
