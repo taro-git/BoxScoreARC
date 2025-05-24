@@ -40,7 +40,7 @@ class GameSummariesNbaApiService:
         return game_summaries
     
     def get_past_game_summaries_for_clickhouse(self, season: str) -> List[GameSummaryForClickhouse]:
-        league_game_finder = leaguegamefinder.LeagueGameFinder(season_nullable=season)
+        league_game_finder = leaguegamefinder.LeagueGameFinder(season_nullable=season, league_id_nullable="00")
         league_game_finder_results = league_game_finder.league_game_finder_results.get_data_frame()
 
         game_summaries: List[GameSummaryForClickhouse] = []
@@ -49,7 +49,6 @@ class GameSummariesNbaApiService:
         for game_id in game_ids:
             teams_for_game = league_game_finder_results[league_game_finder_results["GAME_ID"] == game_id]
             game_date_jst = datetime.strptime(teams_for_game["GAME_DATE"].iloc[0], "%Y-%m-%d").date() + timedelta(days=1)
-            print(game_date_jst)
             if len(teams_for_game) == 2:
                 matchup_str = teams_for_game["MATCHUP"].iloc[0]
                 if 'vs.' in matchup_str:

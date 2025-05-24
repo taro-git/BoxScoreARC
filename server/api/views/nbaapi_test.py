@@ -22,7 +22,7 @@ class NBAApiTest(APIView):
             pd.set_option('display.width', None)           # 横幅による折返しを防止
             pd.set_option('display.max_colwidth', None)    # 各列の内容の最大文字数
 
-            games = leaguegamefinder.LeagueGameFinder(season_nullable="2024-25")
+            games = leaguegamefinder.LeagueGameFinder(season_nullable="2024-25", league_id_nullable="00")
             df_games = pd.DataFrame(games.league_game_finder_results.get_data_frame())  # 過去の試合のゲームサマリーはこれを使う
             playbyplay3 = playbyplayv3.PlayByPlayV3(game_id="0042400216")
             df_playbyplay3 = pd.DataFrame(playbyplay3.play_by_play.get_data_frame())
@@ -42,23 +42,23 @@ class NBAApiTest(APIView):
             # 2010-11 0021000294
             # 2000-01 0020000905
 
-            game_summaries_for_clickhouse = GameSummaryForClickhouse(
-                game_id='0022400174',
-                home_team='MEM',
-                home_score=131,
-                away_team='LAL',
-                away_score=114,
-                game_sequence=6,
-                status_id=3,
-                status_text='Final',
-                live_period=4,
-                live_clock='00:00',
-                game_date_jst='2024-11-07'
-            )
+            # game_summaries_for_clickhouse = GameSummaryForClickhouse(
+            #     game_id='0022400174',
+            #     home_team='MEM',
+            #     home_score=131,
+            #     away_team='LAL',
+            #     away_score=114,
+            #     game_sequence=6,
+            #     status_id=3,
+            #     status_text='Final',
+            #     live_period=4,
+            #     live_clock='00:00',
+            #     game_date_jst='2024-11-07'
+            # )
 
-            test_clickhouse = GameSummariesClickhouseService(table_name='test')
-            test_clickhouse.upsert_game_summaries([game_summaries_for_clickhouse])
-            print(test_clickhouse.get_game_summaries())
+            # test_clickhouse = GameSummariesClickhouseService(table_name='test')
+            # test_clickhouse.upsert_game_summaries([game_summaries_for_clickhouse])
+            # print(test_clickhouse.get_game_summaries())
 
 
 
