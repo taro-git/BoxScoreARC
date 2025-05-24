@@ -1,5 +1,5 @@
 <template>
-  <div class="card">
+  <router-link :to="{name: 'game', params: { gameId: gameSummary.game_id }}" class="card">
     <div class="status">{{ gameSummary.status_text }}</div>
     <div class="teams">
       <div class="team">
@@ -14,7 +14,7 @@
         <div>{{ gameSummary.home_team }}</div>
       </div>
     </div>
-  </div>
+  </router-link>
 </template>
 
 <script setup lang="ts">
@@ -32,6 +32,7 @@ defineProps<{
 .card {
   background: white;
   color: black;
+  text-decoration: none;
   margin: 7px 14px;
   border-radius: 12px;
   padding: 15px;
