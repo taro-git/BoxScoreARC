@@ -93,11 +93,16 @@ const catcheService = new CacheService<MatchSummary[]>({
   }
 })
 
-const updateMatchSummariesSets = () => {
+const updateMatchSummariesSets = async () => {
   const base = selectedDate.value
   let targetDate: Date
-  for (let dayOffset of matchSummariesSets.dayOffsetsList) {
+  const sortedDayOffsets = [...matchSummariesSets.dayOffsetsList].sort((a, b) => {
+    if (a === 0) return -1
+    if (b === 0) return 1
+    return a - b
+  })
 
+  for (const dayOffset of sortedDayOffsets) {
     // initialize
     matchSummariesSets.isLoadingMap.value[dayOffset] = true
     matchSummariesSets.error.value[dayOffset].isError = false
@@ -107,19 +112,23 @@ const updateMatchSummariesSets = () => {
     // update
     targetDate = new Date(base)
     targetDate.setDate(targetDate.getDate() + dayOffset)
-    catcheService.getOrFetch(new Date(targetDate).setHours(0, 0, 0, 0), () => getMatchSummaries(targetDate))
-      .then((response) => {
-        matchSummariesSets.matchSummaryMap.value[dayOffset] = response
-      })
-      .catch((error) => {
-        matchSummariesSets.error.value[dayOffset].isError = true
-        matchSummariesSets.error.value[dayOffset].errorMessage = error.toString()
-      })
-      .finally(() => {
-        matchSummariesSets.isLoadingMap.value[dayOffset] = false
-      })
+
+    try {
+      const response = await catcheService.getOrFetch(
+        new Date(targetDate).setHours(0, 0, 0, 0),
+        () => getMatchSummaries(targetDate)
+      )
+      matchSummariesSets.matchSummaryMap.value[dayOffset] = response
+    } catch (error) {
+      matchSummariesSets.error.value[dayOffset].isError = true
+      matchSummariesSets.error.value[dayOffset].errorMessage =
+        error instanceof Error ? error.message : String(error)
+    } finally {
+      matchSummariesSets.isLoadingMap.value[dayOffset] = false
+    }
   }
 }
+
 
 watch(selectedDate, updateMatchSummariesSets, { immediate: true })
 

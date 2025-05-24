@@ -19,13 +19,9 @@ class GetGameSummariesService:
         self.seasonRangeClickhouseService = seasonRangeClickhouseService or SeasonRangesClickhouseService()
         self.gameSummariesNbaApiService = gameSummariesNbaApiService or GameSummariesNbaApiService()
 
-    def get_game_summaries_for_date(self, date: str) -> List[GameSummary]:
-        date_jst = self.timeAdjustService.convert_tz_to_jst(
-            self.timeAdjustService.convert_date_str_to_datetime(date)
-        )
+    def get_game_summaries_for_date(self, date_jst: datetime) -> List[GameSummary]:
         date_est = self.timeAdjustService.convert_tz_to_est(date_jst)
         today_jst = self.timeAdjustService.today_jst()
-        
 
         game_summaries = []
         if date_jst.date() < today_jst - timedelta(days=1):
