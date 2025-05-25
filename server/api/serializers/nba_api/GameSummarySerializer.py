@@ -13,3 +13,4 @@ class GameSummarySerializer(serializers.Serializer):
     status_text = serializers.CharField()
     live_period = serializers.IntegerField()
     live_clock = serializers.CharField()
+    game_category = serializers.CharField()

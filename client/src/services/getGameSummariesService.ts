@@ -10,7 +10,7 @@ function formatDateToYYYYMMDD(dateArg: Date): string {
   return `${year}${month}${date}`
 }
 
-export const getgameSummaries = async (date: Date): Promise<GameSummary[]> => {
+export const getGameSummaries = async (date: Date): Promise<GameSummary[]> => {
   const response = await axios.get(`${API_BASE_URL}/game-summaries/`, {
     params: {
       date: formatDateToYYYYMMDD(date)
@@ -19,7 +19,7 @@ export const getgameSummaries = async (date: Date): Promise<GameSummary[]> => {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isgameSummary = (item : any) => {
+export const isGameSummary = (item : any) => {
   return typeof item === 'object' &&
   item !== null &&
   typeof item.game_id === 'string' &&
@@ -32,5 +32,6 @@ export const isgameSummary = (item : any) => {
   typeof item.status_id === 'number' &&
   typeof item.status_text === 'string' &&
   typeof item.live_period === 'number' &&
-  typeof item.live_clock === 'string'
+  typeof item.live_clock === 'string' &&
+  typeof item.game_category === 'string'
 }

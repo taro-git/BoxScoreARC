@@ -1,6 +1,7 @@
 <template>
   <router-link :to="{name: 'game', params: { gameId: gameSummary.game_id }}" class="card">
     <div class="status">{{ gameSummary.status_text }}</div>
+    <div class="category">{{ gameSummary.game_category }}</div>
     <div class="teams">
       <div class="team">
         <img :src="gameSummary.away_logo" width="50" />
@@ -43,6 +44,10 @@ defineProps<{
   font-size: 20px;
   text-align: center;
   font-weight: bold;
+}
+.category {
+  font-size: 10px;
+  text-align: center;
 }
 .teams {
   display: flex;

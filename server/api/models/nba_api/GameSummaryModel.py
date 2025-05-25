@@ -40,6 +40,15 @@ TEAM_LOGO = {
     'SAS': 'https://cdn.nba.com/logos/nba/1610612759/global/L/logo.svg'
 }
 
+GAME_CATEGORY = {
+    '1': 'Preseason',
+    '2': 'Regular Season',
+    '3': 'All Star',
+    '4': 'Playoffs',
+    '5': 'Play-In Tournament',
+    '6': 'Emirates NBA Cup'
+}
+
 @dataclass(kw_only=True)
 class GameSummary:
     game_id: str
@@ -54,8 +63,10 @@ class GameSummary:
     status_text: str = 'Final' # status_id=1 -> h:mm pm/am ET, status_id=2 -> 1st Qtr etc., status_id=3 -> Final
     live_period: int = 4
     live_clock: str = '00:00'
+    game_category: str = field(init=False)
 
     def __post_init__(self):
         self.home_logo = TEAM_LOGO.get(self.home_team, '')
         self.away_logo = TEAM_LOGO.get(self.away_team,'')
+        self.game_category = GAME_CATEGORY.get(self.game_id[2], 'Unknown')
 

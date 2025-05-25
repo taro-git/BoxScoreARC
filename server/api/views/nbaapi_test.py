@@ -6,7 +6,7 @@ import json
 import pandas as pd
 
 from nba_api.stats.endpoints import leaguegamefinder
-from nba_api.stats.endpoints import playbyplayv3, playbyplayv2, playbyplay
+from nba_api.stats.endpoints import playbyplayv3, playbyplayv2, playbyplay, scoreboardv2
 from ..models.clickhouse.GameSummaryForClickhouseModel import GameSummaryForClickhouse
 from ..services.clickhouse.GameSummariesClickhouseService import GameSummariesClickhouseService
 

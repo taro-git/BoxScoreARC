@@ -13,19 +13,6 @@ class GameSummariesClickhouseService:
         self.table_name = table_name
         self._ensure_table_exists()
 
-    # 呼び出し元での条件の見直しにともなって timedelta は変えると思う。大枠はこのままで良いとおもうけど、、
-    def has_game_summary_in_past_year(self, date_jst: datetime) -> bool:
-        date_from = (date_jst - timedelta(days=100)).strftime("%Y-%m-%d")
-        date_to = date_jst.strftime("%Y-%m-%d")
-        query = f"""
-        SELECT count() FROM {self.table_name}
-        WHERE game_date_jst >= '{date_from}' AND game_date_jst <= '{date_to}'
-        """
-        result = self.client.query(query)
-        count = result.result_rows[0][0] if result.result_rows else 0
-        return count > 0
-
-
     def upsert_game_summaries(self, game_summaries: List[GameSummaryForClickhouse]):
         if not game_summaries:
             return

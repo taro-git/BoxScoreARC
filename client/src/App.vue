@@ -4,7 +4,7 @@
     
     <footer class="footer">
       <router-link to="/" class="nav">🏠<br>ホーム</router-link>
-      <router-link to="/games" class="nav">🏀<br>games</router-link>
+      <router-link to="/games" class="nav">🏀<br>Games</router-link>
       <router-link to="/news" class="nav">📰<br>ニュース</router-link>
       <router-link to="/video" class="nav">▶️<br>ビデオ</router-link>
       <router-link to="/data" class="nav">📊<br>データ</router-link>

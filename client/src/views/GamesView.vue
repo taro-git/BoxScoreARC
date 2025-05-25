@@ -57,7 +57,7 @@ import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import ServerError from '@/components/ServerError.vue'
 
-import { getgameSummaries, isgameSummary } from '@/services/getGameSummariesService'
+import { getGameSummaries, isGameSummary } from '@/services/getGameSummariesService'
 import { swipeService } from '@/services/swipeService'
 import { CacheService } from '@/services/cacheService'
 
@@ -89,7 +89,7 @@ const catcheService = new CacheService<GameSummary[]>({
   cacheFilter: (_, data: unknown): data is GameSummary[] => {
     if (!Array.isArray(data)) return false
     else if (data.length === 0) return true
-    else return data.every(item => isgameSummary(item) && (item as GameSummary).status_id !== 2)
+    else return data.every(item => isGameSummary(item) && (item as GameSummary).status_id !== 2)
   }
 })
 
@@ -116,7 +116,7 @@ const updategameSummariesSets = async () => {
     try {
       const response = await catcheService.getOrFetch(
         new Date(targetDate).setHours(0, 0, 0, 0),
-        () => getgameSummaries(targetDate)
+        () => getGameSummaries(targetDate)
       )
       gameSummariesSets.gameSummaryMap.value[dayOffset] = response
     } catch (error) {
