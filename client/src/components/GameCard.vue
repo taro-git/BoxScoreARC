@@ -1,18 +1,18 @@
 <template>
   <router-link :to="{name: 'game', params: { gameId: gameSummary.game_id }}" class="card">
-    <div class="status">{{ gameSummary.status_text }}</div>
-    <div class="category">{{ gameSummary.game_category }}</div>
+    <div v-if="fullView" class="status">{{ gameSummary.status_text }}</div>
+    <div v-if="fullView" class="category">{{ gameSummary.game_category }}</div>
     <div class="teams">
       <div class="team">
         <img :src="gameSummary.away_logo" width="50" />
-        <div>{{ gameSummary.away_team }}</div>
+        <div v-if="fullView">{{ gameSummary.away_team }}</div>
       </div>
       <div v-if="scoreDisplay" class="score">{{ gameSummary.away_score ?? 0 }}</div>
       <div class="vs">-</div>
       <div v-if="scoreDisplay" class="score">{{ gameSummary.home_score ?? 0 }}</div>
       <div class="team">
         <img :src="gameSummary.home_logo" width="50" />
-        <div>{{ gameSummary.home_team }}</div>
+        <div v-if="fullView">{{ gameSummary.home_team }}</div>
       </div>
     </div>
   </router-link>
@@ -26,6 +26,7 @@ import type { GameSummary } from '@/types/GameSummary';
 defineProps<{ 
   gameSummary: GameSummary
   scoreDisplay: boolean
+  fullView: boolean
  }>()
 </script>
 

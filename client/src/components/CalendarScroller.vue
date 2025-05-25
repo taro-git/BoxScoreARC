@@ -6,7 +6,7 @@
         v-for="date in dates"
         :key="date.toDateString()"
         :ref="el => assignRef(date, el)"
-        :class="['date', isSelected(date) ? 'selected' : '']"
+        :class="['date', isSelected(date) ? 'selected' : isToday(date)? 'today': '']"
         @click="$emit('update-date', date)"
       >
         {{ date.getDate() }}
@@ -52,6 +52,9 @@ const generateDates = (centerDate: Date) => {
 
 const isSelected = (date: Date) =>
   date.toDateString() === props.selectedDate.toDateString()
+
+const isToday = (date: Date) =>
+  date.getDate() === (new Date()).getDate()
 
 const scrollToSelectedDate = () => {
   nextTick(() => {
@@ -109,10 +112,15 @@ const selectedMonth = computed(() =>
 }
 
 .date.selected {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.9);
   color: #1A2B5D;
   font-weight: bold;
-  border: 2px solid #1A2B5D;
+  border: 1px solid #ffffff;
   font-size: 16px;
 }
+
+.date.today {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 </style>

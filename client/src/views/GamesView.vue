@@ -36,11 +36,12 @@
         <ServerError v-else-if="gameSummariesSets.error.value[dayOffset].isError" :error-message="gameSummariesSets.error.value[dayOffset].errorMessage" />
         <template v-else>
           <div v-if="gameSummariesSets.gameSummaryMap.value[dayOffset].length === 0" class="no-game">no game</div>
-          <gameCard
+          <GameCard
             v-for="(game, j) in gameSummariesSets.gameSummaryMap.value[dayOffset]"
             :key="j"
             :game-summary="game"
             :score-display="true"
+            :full-view="true"
           />
         </template>
       </div>

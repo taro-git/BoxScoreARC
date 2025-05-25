@@ -1,5 +1,5 @@
 :root {
-  --footer-height: 38px;
+  --footer-height: 59px;
   --main-backgroud-color: #081C45;
   --dark-backgroud-color: #07183c;
   --footer-backgroud-color: #0a2c64;
@@ -12,4 +12,5 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   margin: 0;
+  user-select: none;
 }

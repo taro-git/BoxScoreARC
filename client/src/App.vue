@@ -31,6 +31,7 @@
   font-size: 12px;
   height: var(--footer-height);
   border-top: var(--border);
+  box-sizing: border-box;
   flex-shrink: 0; /* フッターが縮小しない */
 }
 
