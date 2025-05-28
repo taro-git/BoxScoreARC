@@ -4,7 +4,7 @@ from rest_framework import status
 
 from ..services.common.GetGameSummariesService import GetGameSummariesService
 from ..services.common.TimeAdjustService import TimeAdjustService
-from ..serializers.nba_api.GameSummarySerializer import GameSummarySerializer
+from ..serializers.common.GameSummarySerializer import GameSummarySerializer
 
 
 class NBAGameSummariesView(APIView):
