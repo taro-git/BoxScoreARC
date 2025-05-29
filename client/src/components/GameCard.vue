@@ -1,6 +1,6 @@
 <template>
   <router-link :to="{name: 'game', params: { gameId: gameSummary.game_id }}" class="card">
-    <div v-if="fullView" class="status">{{ gameSummary.status_text }}</div>
+    <div class="status">{{ gameSummary.status_text }}</div>
     <div v-if="fullView" class="category">{{ gameSummary.game_category }}</div>
     <div class="teams">
       <div class="team">

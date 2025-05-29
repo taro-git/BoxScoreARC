@@ -1,13 +1,13 @@
 <template>
   <div class="teams">
-    <div @click="selectedTeam='home'" :class="['team', selectedTeam === 'home' ? 'selected' : '']">CLE</div>
-    <div @click="selectedTeam='away'" :class="['team', selectedTeam === 'away' ? 'selected' : '']">BOS</div>
+    <div @click="selectedTeam='away'" :class="['team', selectedTeam === 'away' ? 'selected' : '']">{{ boxScoreSummary.away.abbreviation }}</div>
+    <div @click="selectedTeam='home'" :class="['team', selectedTeam === 'home' ? 'selected' : '']">{{ boxScoreSummary.home.abbreviation }}</div>
   </div>
   <div class="game-clock">
     <label for="game-time">Game Clock Range</label>
     <vue-slider
       class="game-clock-slider"
-      v-model="range"
+      v-model="gameClockRange"
       :max="maxMilliSeconds"
       :tooltip="'always'"
       :tooltip-formatter="formatReminTime"
@@ -62,11 +62,17 @@
 
           <template v-else>
             <th :class="['left-data', [rowIndex%2 !== 0 ? 'odd-row' : '']]">
-              {{ row.label }}
+              {{ row.player_name }}
             </th>
+            
             <td
               :class="['data', [rowIndex%2 !== 0 ? 'odd-row' : '']]"
-              v-for="(cell, colIndex) in row.data"
+            >
+              {{ row.pos }}
+            </td>
+            <td
+              :class="['data', [rowIndex%2 !== 0 ? 'odd-row' : '']]"
+              v-for="(cell, colIndex) in row.comulative_boxscore"
               :key="'cell-' + rowIndex + '-' + colIndex"
             >
               {{ cell }}
@@ -81,16 +87,28 @@
 <script setup lang="ts">
 import VueSlider from 'vue-slider-component'
 import 'vue-slider-component/theme/default.css'
-import { ref } from 'vue'
 
-const selectedTeam = ref<'home' | 'away'>('home')
+import { computed, defineEmits, defineProps, ref, watch } from 'vue'
+
+import { BOX_SCORE_COLUMNS, BoxScore, BoxScoreRow } from '@/types/BoxScore'
+import { BoxScoreSummary, Player } from '@/types/BoxScoreSummary';
+
+const props = defineProps<{
+  boxScoreSummary: BoxScoreSummary
+}>()
+
+const emit = defineEmits<{
+  (e: 'updateGameClockRange', home_score: number, away_score: number): void
+}>()
+
+const selectedTeam = ref<'home' | 'away'>('away')
 
 const maxMilliSeconds = (12 * 4 + 5 * 2) * 60 * 1000
 
-let range1=0
-let range2=0
-
-const range = ref([range1,range2]) // [minValue, maxValue]
+const gameClockRange = ref([0,0])
+watch(gameClockRange, ([start_range, end_range]) => {
+  emit('updateGameClockRange', end_range, start_range)
+})
 
 const formatReminTime = (milliSeconds: number) => {
   let nth = ''
@@ -152,19 +170,33 @@ const formatReminTime = (milliSeconds: number) => {
   return `${nth} ${reminTime}`
 }
 
-interface Row {
-  label: string
-  data: string[]
+const columns = BOX_SCORE_COLUMNS
+
+const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
+  let boxScoreRows = players.map((player) => ({
+    player_id: player.player_id,
+    player_name: player.name,
+    pos: player.position,
+    comulative_boxscore: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+  }))
+  boxScoreRows.splice(5, 0, {
+    player_id: 0,
+    player_name: 'no data',
+    pos: '',
+    comulative_boxscore: []
+  })
+  return boxScoreRows
 }
 
-const columns: string[] = [
-  'POS', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG', 'FG%', '3P', '3P%', 'FT', 'FT%', 'OREB', 'DREB', 'TO', 'PF', 'EFF', '+/-'
-]
+const boxScore = ref<BoxScore>({
+  home: convertPlayersToBoxScore(props.boxScoreSummary.home.players),
+  away: convertPlayersToBoxScore(props.boxScoreSummary.away.players)
+})
 
-const rows: Row[] = Array.from({ length: 20 }, (_, rowIndex) => ({
-  label: `player ${rowIndex + 1}`,
-  data: Array.from({ length: columns.length }, (_, colIndex) => `${colIndex + 1}`)
-}))
+const rows = computed(() => {
+  return selectedTeam.value === 'home' ? boxScore.value.home : boxScore.value.away
+})
+
 </script>
 
 <style scoped>

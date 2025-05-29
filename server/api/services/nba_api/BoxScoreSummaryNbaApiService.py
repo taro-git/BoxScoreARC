@@ -47,6 +47,8 @@ class BoxScoreSummaryNbaApiService:
                         sequence=len(away_players)+1
                     )
                 )
+        home_players = sorted(home_players, key=lambda player: (player.is_inactive, player.sequence))
+        away_players = sorted(away_players, key=lambda player: (player.is_inactive, player.sequence))
         home_team = TeamSummary(
             team_id=int(home_team_id),
             abbreviation=home_team_abbreviation,
