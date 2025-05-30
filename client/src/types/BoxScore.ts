@@ -26,6 +26,7 @@ interface BoxScoreColumns {
 export interface BoxScoreRow {
   player_id: number
   player_name: string
+  jersey: string
   pos: string
   // number は試合の経過時間 milli sec, number を昇順ソートしておく想定
   comulative_boxscore: number[]//Array<[number, BoxScoreColumns]>

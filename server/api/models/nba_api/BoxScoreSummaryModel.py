@@ -8,6 +8,7 @@ from .GameSummaryModel import TeamAbbreviation, TEAM_LOGO
 class Player:
     player_id: int
     name: str
+    jersey: str
     position: str
     is_inactive: bool
     sequence: int

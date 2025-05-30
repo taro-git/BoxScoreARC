@@ -6,7 +6,7 @@ import json
 import pandas as pd
 
 from nba_api.stats.endpoints import leaguegamefinder
-from nba_api.stats.endpoints import playbyplayv3, playbyplayv2, scoreboardv2, boxscoretraditionalv2, boxscoresummaryv2
+from nba_api.stats.endpoints import playbyplayv3, playbyplayv2, scoreboardv2, boxscoretraditionalv2, boxscoresummaryv2, boxscoretraditionalv3, boxscoreplayertrackv3
 from nba_api.live.nba.endpoints import playbyplay, boxscore
 from ..models.clickhouse.GameSummaryForClickhouseModel import GameSummaryForClickhouse
 from ..services.clickhouse.GameSummariesClickhouseService import GameSummariesClickhouseService
@@ -34,7 +34,7 @@ class NBAApiTest(APIView):
             inactive_players = boxScoreSummaryV2.inactive_players.get_data_frame() # インアクティブプレイヤーがわかる
             game_summary = pd.DataFrame(boxScoreSummaryV2.game_summary.get_data_frame()) # home team id、away team id がわかる
             line_score = pd.DataFrame(boxScoreSummaryV2.line_score.get_data_frame()) # team ごとの情報がある id 3文字の名前、クウォーターごとの得点
-            boxScoreTraditionalV2 = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id="0020000905") # チームの選手一覧（ボックススコアあるけど不要）
+            boxScoreTraditionalV2 = boxscoreplayertrackv3.BoxScorePlayerTrackV3(game_id="0020000905") # チームの選手一覧（ボックススコアあるけど不要）
             player_stats = pd.DataFrame(boxScoreTraditionalV2.player_stats.get_data_frame())
             # boxScore = boxscore.BoxScore(game_id="0042400304") # 当日のデータも試合終わっちゃってるとない
             # df_boxScore = pd.DataFrame(boxScore.home_team.get_data_frame())
@@ -47,6 +47,7 @@ class NBAApiTest(APIView):
             print(game_summary)
             print(line_score)
             print(player_stats) # スターターの START_POSITION のみに値が入っているケースが多い。見分けつかなかったら上から表示しちゃえばいいと思う。
+            print(player_stats.loc[:, ['teamId', 'personId', 'nameI', 'position', 'jerseyNum']])
             # print(list(df.columns))
             # print(df_out)
             # print(df_playbyplay3.loc[:, 'description'].unique())

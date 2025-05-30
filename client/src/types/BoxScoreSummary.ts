@@ -1,6 +1,7 @@
 export interface Player {
   player_id: number
   name: string
+  jersey: string
   position: string
   is_inactive: boolean
   sequence: number

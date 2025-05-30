@@ -18,7 +18,12 @@
     <table class="fixed-table">
       <thead>
         <tr>
-          <th class="left top-row-1 z-high">PLAYER</th>
+          <th
+            class="left top-row-1 z-high"
+            :colspan="2"
+          >
+            PLAYER
+          </th>
           <th
             v-for="(col, colIndex) in columns"
             :key="'head1-' + colIndex"
@@ -31,6 +36,7 @@
         <tr>
           <th
             class="left top-row-2 z-high"
+            :colspan="2"
           >
             STARTERS
           </th>
@@ -50,6 +56,7 @@
           <template v-if="rowIndex === 5">
             <th
               class="left top-row-3 z-high"
+              :colspan="2"
             >
               BENCH
             </th>
@@ -61,7 +68,10 @@
           </template>
 
           <template v-else>
-            <th :class="['left-data', [rowIndex%2 !== 0 ? 'odd-row' : '']]">
+            <th :class="['left1-data', [rowIndex%2 !== 0 ? 'odd-row' : '']]">
+              {{ `#${row.jersey}` }}
+            </th>
+            <th :class="['left2-data', [rowIndex%2 !== 0 ? 'odd-row' : '']]">
               {{ row.player_name }}
             </th>
             
@@ -176,12 +186,14 @@ const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
   let boxScoreRows = players.map((player) => ({
     player_id: player.player_id,
     player_name: player.name,
+    jersey: player.jersey,
     pos: player.position,
     comulative_boxscore: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
   }))
   boxScoreRows.splice(5, 0, {
     player_id: 0,
     player_name: 'no data',
+    jersey: '',
     pos: '',
     comulative_boxscore: []
   })
@@ -245,13 +257,12 @@ const rows = computed(() => {
 }
 
 .fixed-table {
-  border-collapse: collapse;
+  border-spacing: 0px;
 }
 
 .fixed-table th,
 .fixed-table td {
   padding: 6px 10px;
-  text-align: center;
   white-space: nowrap;
 }
 
@@ -265,6 +276,7 @@ const rows = computed(() => {
   background-color: rgb(0, 48, 136);
   color: white;
   font-size: 10px;
+  text-align: center;
 }
 
 .top-row-2 {
@@ -275,6 +287,7 @@ const rows = computed(() => {
   height: 15px;
   box-sizing: border-box;
   font-size: 10px;
+  text-align: center;
   background-color: #999999;
 }
 
@@ -285,6 +298,7 @@ const rows = computed(() => {
   height: 15px;
   box-sizing: border-box;
   font-size: 10px;
+  text-align: center;
   background-color: #999999;
 }
 
@@ -297,14 +311,28 @@ const rows = computed(() => {
   left: 0;
 }
 
-.left-data {
+.left1-data {
   position: sticky;
   left: 0;
+  max-width: 46px;
+  min-width: 46px;
+  font-size: 14px;
+  box-sizing: border-box;
   background-color: white;
+  text-align: left;
+}
+
+.left2-data {
+  position: sticky;
+  left: 46px;
+  background-color: white;
+  text-align: left;
+  border-right: 1px solid #999999;
 }
 
 .data {
   z-index: 1;
+  text-align: center;
   background-color: white;
 }
 

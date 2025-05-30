@@ -3,6 +3,7 @@ from rest_framework import serializers
 class PlayerSerializer(serializers.Serializer):
     player_id = serializers.IntegerField()
     name = serializers.CharField()
+    jersey = serializers.CharField()
     position = serializers.CharField()
     is_inactive = serializers.BooleanField()
     sequence = serializers.IntegerField()

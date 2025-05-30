@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from nba_api.stats.endpoints import boxscoretraditionalv2, boxscoresummaryv2
+from nba_api.stats.endpoints import boxscoretraditionalv2, boxscoresummaryv2, boxscoreplayertrackv3
 
 from ...models.nba_api.BoxScoreSummaryModel import Player, TeamSummary, BoxScoreSummary
 
@@ -13,8 +13,8 @@ class BoxScoreSummaryNbaApiService:
         inactive_players = box_score_summary_v2.inactive_players.get_data_frame()
         game_summary = box_score_summary_v2.game_summary.get_data_frame()
         line_score = box_score_summary_v2.line_score.get_data_frame()
-        box_score_traditional_v2 = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id)
-        player_stats = box_score_traditional_v2.player_stats.get_data_frame()
+        box_score_player_track_v3 = boxscoreplayertrackv3.BoxScorePlayerTrackV3(game_id=game_id)
+        player_stats = box_score_player_track_v3.player_stats.get_data_frame()
 
         home_team_id = game_summary["HOME_TEAM_ID"].iloc[0]
         away_team_id = game_summary["VISITOR_TEAM_ID"].iloc[0]
@@ -27,23 +27,25 @@ class BoxScoreSummaryNbaApiService:
         home_players = []
         away_players = []
         for player in player_stats.itertuples():
-            if player.TEAM_ID == home_team_id:
+            if player.teamId == home_team_id:
                 home_players.append(
                     Player(
-                        player_id=int(player.PLAYER_ID),
-                        name=player.PLAYER_NAME,
-                        position=player.START_POSITION,
-                        is_inactive=player.PLAYER_ID in inactive_player_ids,
+                        player_id=int(player.personId),
+                        name=player.nameI,
+                        jersey=player.jerseyNum,
+                        position=player.position,
+                        is_inactive=player.personId in inactive_player_ids,
                         sequence=len(home_players)+1
                     )
                 )
             else:
                 away_players.append(
                     Player(
-                        player_id=int(player.PLAYER_ID),
-                        name=player.PLAYER_NAME,
-                        position=player.START_POSITION,
-                        is_inactive=player.PLAYER_ID in inactive_player_ids,
+                        player_id=int(player.personId),
+                        name=player.nameI,
+                        jersey=player.jerseyNum,
+                        position=player.position,
+                        is_inactive=player.personId in inactive_player_ids,
                         sequence=len(away_players)+1
                     )
                 )
