@@ -54,7 +54,9 @@ const isSelected = (date: Date) =>
   date.toDateString() === props.selectedDate.toDateString()
 
 const isToday = (date: Date) =>
-  date.getDate() === (new Date()).getDate()
+  date.getYear() === new Date().getYear() &&
+  date.getMonth() === new Date().getMonth() &&
+  date.getDate() === new Date().getDate()
 
 const scrollToSelectedDate = () => {
   nextTick(() => {

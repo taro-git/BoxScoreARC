@@ -3,17 +3,6 @@
     <div @click="selectedTeam='away'" :class="['team', selectedTeam === 'away' ? 'selected' : '']">{{ boxScoreSummary.away.abbreviation }}</div>
     <div @click="selectedTeam='home'" :class="['team', selectedTeam === 'home' ? 'selected' : '']">{{ boxScoreSummary.home.abbreviation }}</div>
   </div>
-  <div class="game-clock">
-    <label for="game-time">Game Clock Range</label>
-    <vue-slider
-      class="game-clock-slider"
-      v-model="gameClockRange"
-      :max="maxMilliSeconds"
-      :tooltip="'always'"
-      :tooltip-formatter="formatReminTime"
-      :height="10"
-    />
-  </div>
   <div class="table-container">
     <table class="fixed-table">
       <thead>
@@ -95,10 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import VueSlider from 'vue-slider-component'
-import 'vue-slider-component/theme/default.css'
-
-import { computed, defineEmits, defineProps, ref, watch } from 'vue'
+import { computed, defineProps, ref } from 'vue'
 
 import { BOX_SCORE_COLUMNS, BoxScore, BoxScoreRow } from '@/types/BoxScore'
 import { BoxScoreSummary, Player } from '@/types/BoxScoreSummary';
@@ -107,78 +93,7 @@ const props = defineProps<{
   boxScoreSummary: BoxScoreSummary
 }>()
 
-const emit = defineEmits<{
-  (e: 'updateGameClockRange', home_score: number, away_score: number): void
-}>()
-
 const selectedTeam = ref<'home' | 'away'>('away')
-
-const maxMilliSeconds = (12 * 4 + 5 * 2) * 60 * 1000
-
-const gameClockRange = ref([0,0])
-watch(gameClockRange, ([start_range, end_range]) => {
-  emit('updateGameClockRange', end_range, start_range)
-})
-
-const formatReminTime = (milliSeconds: number) => {
-  let nth = ''
-  let reminMinutes = 12
-  let reminMilliSeconds = 0
-  let reminSeconds = 0
-  let reminTime = ''
-  if (milliSeconds <= 48*60*1000) {
-    let quarter = 0
-    if (milliSeconds%(12*60*1000) !== 0){
-      quarter = Math.floor((milliSeconds) / (12*60*1000)) + 1
-    } else {
-      if (milliSeconds === 0) {
-        quarter = 1
-      } else {
-        quarter = Math.floor((milliSeconds) / (12*60*1000))
-      }
-    }
-    switch (quarter) {
-      case 1:
-        nth = '1st Q.'
-        break
-      case 2:
-        nth = '2nd Q.'
-        break
-      case 3:
-        nth = '3rd Q.'
-        break
-      case 4:
-        nth = '4th Q.'
-        break
-    }
-    reminMilliSeconds = quarter*12*60*1000 - milliSeconds
-    reminMinutes = Math.floor(reminMilliSeconds / (60*1000))
-    reminMilliSeconds = reminMilliSeconds%(60*1000)
-  } else {
-    const otMilliSeconds = milliSeconds - 48*60*1000
-    let ot = 0
-    if (otMilliSeconds%(5*60*1000) !== 0){
-      ot = Math.floor(otMilliSeconds/ (5*60*1000)) + 1
-    } else {
-      ot = Math.floor(otMilliSeconds/ (5*60*1000))
-    }
-    nth = `OT${ot}`
-    reminMilliSeconds = ot*5*60*1000 - otMilliSeconds
-    reminMinutes = Math.floor(reminMilliSeconds / (60*1000))
-    reminMilliSeconds = reminMilliSeconds%(60*1000)
-  }
-  if (reminMinutes === 0){
-    reminSeconds = reminMilliSeconds / 1000
-    const roundedReminSeconds = reminSeconds.toFixed(1)
-    reminTime = `${roundedReminSeconds} s`
-  } else {
-    reminSeconds = Math.floor(reminMilliSeconds / 1000)
-    const paddedReminMinutes = String(reminMinutes).padStart(2, '0')
-    const paddedReminSeconds = String(reminSeconds).padStart(2, '0')
-    reminTime = `${paddedReminMinutes}:${paddedReminSeconds}`
-  }
-  return `${nth} ${reminTime}`
-}
 
 const columns = BOX_SCORE_COLUMNS
 
@@ -231,18 +146,6 @@ const rows = computed(() => {
 .selected {
   background-color: rgb(0, 158, 221);
   border-radius: 6px;
-}
-
-.game-clock {
-  width: 100vw - 100px;
-  display: flex;
-  flex-direction: column;
-  margin: 0px 50px 20px 50px;
-  align-items: center;
-}
-.game-clock-slider {
-  width: 100% !important;
-  user-select: auto !important;
 }
 
 .table-container {

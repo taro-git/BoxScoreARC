@@ -11,7 +11,7 @@ const routes: Array<RouteRecordRaw> = [
     component: GamesView
   },
   {
-    path: '/games/:gameId',
+    path: '/games/:gameDate/:gameId',
     name: 'game',
     component: GameView,
     props: true

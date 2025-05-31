@@ -40,6 +40,7 @@
             v-for="(game, j) in gameSummariesSets.gameSummaryMap.value[dayOffset]"
             :key="j"
             :game-summary="game"
+            :game-date="selectedDateISOString"
             :score-display="true"
             :full-view="true"
           />
@@ -50,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 import GameCard from '@/components/GameCard.vue'
 import CalendarScroller from '@/components/CalendarScroller.vue'
@@ -65,7 +66,10 @@ import { CacheService } from '@/services/cacheService'
 import type { GameSummary } from '@/types/GameSummary'
 import { GameSummariesSets } from '@/types/GameSummariesSets'
 
-const selectedDate = ref(new Date())
+const sessionStorageGameDate = sessionStorage.getItem('gameDate')
+sessionStorage.removeItem('gameDate')
+const selectedDate = ref(sessionStorageGameDate ? new Date(sessionStorageGameDate) : new Date())
+const selectedDateISOString = computed(() => selectedDate.value.toISOString().slice(0, 10))
 const showPopup = ref(false)
 const numberOfPreviousDays = 1
 const numberOfFutureDays = 1

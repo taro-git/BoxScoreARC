@@ -1,5 +1,5 @@
 <template>
-  <router-link :to="{name: 'game', params: { gameId: gameSummary.game_id }}" class="card">
+  <router-link :to="{name: 'game', params: { gameDate: gameDate, gameId: gameSummary.game_id }}" class="card">
     <div class="status">{{ gameSummary.status_text }}</div>
     <div v-if="fullView" class="category">{{ gameSummary.game_category }}</div>
     <div class="teams">
@@ -25,6 +25,7 @@ import type { GameSummary } from '@/types/GameSummary';
 
 defineProps<{ 
   gameSummary: GameSummary
+  gameDate: string
   scoreDisplay: boolean
   fullView: boolean
  }>()
