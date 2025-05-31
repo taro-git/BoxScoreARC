@@ -37,9 +37,10 @@ import HeadToHeadRecord from '@/components/HeadToHeadRecord.vue'
 import GameCard from '@/components/GameCard.vue'
 
 import { CacheService } from '@/services/cacheService'
-import { getBoxScoreSummary, isBoxScoreSummary } from '@/services/getBoxScoreService'
+import { getBoxScoreSummary, isBoxScoreSummary, getBoxScoreRawData, isBoxScoreRawData } from '@/services/getBoxScoreService'
 
 import { BoxScoreSummary } from '@/types/BoxScoreSummary'
+import { BOX_SCORE_COLUMNS, BoxScoreData, BoxScoreRawData } from '@/types/BoxScore'
 
 const props = defineProps<{
   gameId: string
@@ -64,6 +65,7 @@ const currentTabProps = computed(() => {
     case 'headtoheadrecord': return {}
     default: return { 
       boxScoreSummary: boxScoreSummary.value,
+      boxScoreData: boxScoreData,
       maxMilliSeconds: maxMilliSeconds,
       gameClockRange: gameClockRange.value,
     }
@@ -73,8 +75,11 @@ const currentTabProps = computed(() => {
 const maxMilliSeconds = (12 * 4 + 5 * 2) * 60 * 1000
 const gameClockRange = ref([0,0])
 watch(gameClockRange, ([start_range, end_range]) => {
-  gameSummary.value.away_score = start_range
-  gameSummary.value.home_score = end_range
+  updateBoxScoreData(start_range, end_range)
+  gameSummary.value.away_score = boxScoreSummary.value.away.players.map(player => player.player_id)
+    .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
+  gameSummary.value.home_score = boxScoreSummary.value.home.players.map(player => player.player_id)
+    .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
 })
 
 const formatReminTime = (milliSeconds: number) => {
@@ -139,15 +144,16 @@ const formatReminTime = (milliSeconds: number) => {
 
 let isLoading = ref(true)
 
-const cacheService = new CacheService<BoxScoreSummary>({
+const boxScoreSummarycacheService = new CacheService<BoxScoreSummary>({
   ttlSeconds: 900,
   maxItems: 10,
   cacheFilter: (_, data: unknown): data is BoxScoreSummary => isBoxScoreSummary(data),
 })
 
-const boxScoreSummary = ref()
+const boxScoreSummary = ref<BoxScoreSummary>({})
 const gameSummary = ref()
-cacheService.getOrFetch(Number(props.gameId), () => getBoxScoreSummary(props.gameId))
+const boxScoreData = ref<BoxScoreData>({})
+boxScoreSummarycacheService.getOrFetch(Number(props.gameId), () => getBoxScoreSummary(props.gameId))
   .then((response) => {
     boxScoreSummary.value = response
     gameSummary.value = {
@@ -158,8 +164,45 @@ cacheService.getOrFetch(Number(props.gameId), () => getBoxScoreSummary(props.gam
       away_score: 0,
       status_text: response.game_date_jst.toISOString().slice(0, 10),
     }
+    const players = [...response.home.players, ...response.away.players]
+    players.forEach(player => {
+      boxScoreData.value[player.player_id] = new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)
+    })
     isLoading.value = false
   })
+
+const boxScoreRawDatacacheService = new CacheService<BoxScoreRawData>({
+  ttlSeconds: 900,
+  maxItems: 10,
+  cacheFilter: (_, data: unknown): data is BoxScoreRawData => isBoxScoreRawData(data),
+})
+const boxScoreRawData: BoxScoreRawData = ref<BoxScoreRawData>({})
+boxScoreRawDatacacheService.getOrFetch(Number(props.gameId), () => getBoxScoreRawData(props.gameId))
+  .then((response) => {
+    boxScoreRawData.value = response
+  })
+
+const updateBoxScoreData = (start_range: number, end_range: number) => {
+  for (const [player_id, box_score_raw] of Object.entries(boxScoreRawData.value)){
+    let start_box_score: number[] | null = null
+    let end_box_score: number[] | null = null
+    for (let i = 0; i < box_score_raw.length; i++) {
+      const [time, box_score] = box_score_raw[i]
+      if(!start_box_score && time > start_range){
+        start_box_score = box_score
+      }
+      if(time < end_range){
+        end_box_score = box_score
+      } else {
+        break
+      }
+    }
+    if(!start_box_score || !end_box_score){
+      break
+    }
+    boxScoreData.value[player_id] = end_box_score.map((v, i) => v - start_box_score[i])
+  }
+}
 
 </script>
 

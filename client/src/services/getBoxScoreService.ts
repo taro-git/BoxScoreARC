@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 import { BoxScoreSummary } from '@/types/BoxScoreSummary'
+import { BoxScoreRawData } from '@/types/BoxScore'
 
 const API_BASE_URL = 'http://172.16.0.62:1026/api/nba'
 
@@ -32,4 +33,57 @@ export const isBoxScoreSummary = (item : any) => {
   typeof item.away.logo === 'string' &&
   typeof item.away.players === 'object'
 }
+
+export const getBoxScoreRawData = async (gameId: string): Promise<BoxScoreRawData> => {
+//   const response = await axios.get(`${API_BASE_URL}/box-score-data/`, {
+//     params: {
+//       gameId: gameId
+//   }})
+//   const boxScoreRawData: BoxScoreRawData = {}
+//   for (const key in response.data) {
+//     const numericKey = Number(key)
+//     boxScoreRawData[numericKey] = response.data[key]
+//   }
+//   return boxScoreRawData
+  // 上のAPIがまだ存在しないから仮で以下を返しておく
+  const temp: BoxScoreRawData = {}
+  const boxScoreSummary = await getBoxScoreSummary(gameId)
+  const players = [...boxScoreSummary.home.players, ...boxScoreSummary.away.players]
+  for (const player of players) {
+    temp[Number(player.player_id)] = Array.from({ length: 2880000 / 1000 + 1 }, (_, i) => [
+      i * 1000,
+      new Array(18).fill(i)
+    ])
+  }
+  return temp
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const isBoxScoreRawData = (item: any) => {
+  if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+    return false;
+  }
+
+  for (const key in item) {
+    if (isNaN(Number(key))) return false;
+
+    const value = item[key];
+    if (!Array.isArray(value)) return false;
+
+    for (const tuple of value) {
+      if (
+        !Array.isArray(tuple) ||
+        tuple.length !== 2 ||
+        typeof tuple[0] !== 'number' ||
+        !Array.isArray(tuple[1]) ||
+        !tuple[1].every((n) => typeof n === 'number')
+      ) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
 

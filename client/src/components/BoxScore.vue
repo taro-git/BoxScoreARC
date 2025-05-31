@@ -84,13 +84,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref } from 'vue'
+import { computed, defineProps, ref, Ref } from 'vue'
 
-import { BOX_SCORE_COLUMNS, BoxScore, BoxScoreRow } from '@/types/BoxScore'
+import { BOX_SCORE_COLUMNS, BoxScoreData, BoxScoreRow } from '@/types/BoxScore'
 import { BoxScoreSummary, Player } from '@/types/BoxScoreSummary';
 
 const props = defineProps<{
   boxScoreSummary: BoxScoreSummary
+  boxScoreData: Ref<BoxScoreData>
 }>()
 
 const selectedTeam = ref<'home' | 'away'>('away')
@@ -103,7 +104,7 @@ const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
     player_name: player.name,
     jersey: player.jersey,
     pos: player.position,
-    comulative_boxscore: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    comulative_boxscore: props.boxScoreData.value[player.player_id] ?? []
   }))
   boxScoreRows.splice(5, 0, {
     player_id: 0,
@@ -115,10 +116,10 @@ const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
   return boxScoreRows
 }
 
-const boxScore = ref<BoxScore>({
+const boxScore = computed(() => ({
   home: convertPlayersToBoxScore(props.boxScoreSummary.home.players),
   away: convertPlayersToBoxScore(props.boxScoreSummary.away.players)
-})
+}))
 
 const rows = computed(() => {
   return selectedTeam.value === 'home' ? boxScore.value.home : boxScore.value.away
