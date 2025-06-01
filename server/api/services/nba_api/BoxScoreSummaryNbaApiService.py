@@ -8,7 +8,6 @@ class BoxScoreSummaryNbaApiService:
     def __init__(self):
         pass
     
-    # MYTODO inactive player を返す　　player_stats は　inactive なプレイヤーは元から含まれてないっぽい
     def get_box_score_summary(self, game_id: str) -> BoxScoreSummary:
         box_score_summary_v2 = boxscoresummaryv2.BoxScoreSummaryV2(game_id=game_id)
         inactive_players = box_score_summary_v2.inactive_players.get_data_frame()
