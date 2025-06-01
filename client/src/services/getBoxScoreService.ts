@@ -50,10 +50,11 @@ export const getBoxScoreRawData = async (gameId: string): Promise<BoxScoreRawDat
   const boxScoreSummary = await getBoxScoreSummary(gameId)
   const players = [...boxScoreSummary.home.players, ...boxScoreSummary.away.players]
   for (const player of players) {
-    temp[Number(player.player_id)] = Array.from({ length: 2880000 / 1000 + 1 }, (_, i) => [
-      i * 1000,
-      new Array(18).fill(i)
-    ])
+    if(!player.is_inactive) temp[Number(player.player_id)] =
+      Array.from({ length: 2880000 / 1000 + 1 }, (_, i) => [
+        i * 1000,
+        new Array(18).fill(i)
+      ])
   }
   return temp
 }

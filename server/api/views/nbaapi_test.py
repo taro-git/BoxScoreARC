@@ -44,10 +44,10 @@ class NBAApiTest(APIView):
             # print(df_playbyplay2)
             # print(df_liveplaybyplay)
             print(inactive_players)
-            print(game_summary)
-            print(line_score)
-            print(player_stats) # スターターの START_POSITION のみに値が入っているケースが多い。見分けつかなかったら上から表示しちゃえばいいと思う。
-            print(player_stats.loc[:, ['teamId', 'personId', 'nameI', 'position', 'jerseyNum']])
+            # print(game_summary)
+            # print(line_score)
+            # print(player_stats) # スターターの START_POSITION のみに値が入っているケースが多い。見分けつかなかったら上から表示しちゃえばいいと思う。
+            # print(player_stats.loc[:, ['teamId', 'personId', 'nameI', 'position', 'jerseyNum']])
             # print(list(df.columns))
             # print(df_out)
             # print(df_playbyplay3.loc[:, 'description'].unique())

@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <GameCard v-if="!isLoading" :game-summary="gameSummary" :score-display="true" :full-view="false"/>
+    <GameCard v-if="!isLoading" :game-summary="gameSummary" :game-date="gameDate" :score-display="true" :full-view="false"/>
     <div class="tab-menu">
       <div @click="activeTab = 'teamstats'" :class="['tab', activeTab === 'teamstats' ? 'selected' : '']">Team Stats</div>
       <div @click="activeTab = 'boxscore'" :class="['tab', activeTab === 'boxscore' ? 'selected' : '']">Box Score</div>
@@ -41,6 +41,7 @@ import { getBoxScoreSummary, isBoxScoreSummary, getBoxScoreRawData, isBoxScoreRa
 
 import { BoxScoreSummary } from '@/types/BoxScoreSummary'
 import { BOX_SCORE_COLUMNS, BoxScoreData, BoxScoreRawData } from '@/types/BoxScore'
+import { GameSummary } from '@/types/GameSummary'
 
 const props = defineProps<{
   gameId: string
@@ -150,8 +151,29 @@ const boxScoreSummarycacheService = new CacheService<BoxScoreSummary>({
   cacheFilter: (_, data: unknown): data is BoxScoreSummary => isBoxScoreSummary(data),
 })
 
-const boxScoreSummary = ref<BoxScoreSummary>({})
-const gameSummary = ref()
+const boxScoreSummary = ref<BoxScoreSummary>({
+    game_date_jst: new Date(),
+    home: {
+        team_id: 0,
+        abbreviation: '',
+        logo: '',
+        players: []
+    },
+    away: {
+        team_id: 0,
+        abbreviation: '',
+        logo: '',
+        players: []
+    }
+})
+const gameSummary = ref<GameSummary>({
+    game_id: '',
+    home_logo: '',
+    home_score: 0,
+    away_logo: '',
+    away_score: 0,
+    status_text: ''
+})
 const boxScoreData = ref<BoxScoreData>({})
 boxScoreSummarycacheService.getOrFetch(Number(props.gameId), () => getBoxScoreSummary(props.gameId))
   .then((response) => {
@@ -166,7 +188,7 @@ boxScoreSummarycacheService.getOrFetch(Number(props.gameId), () => getBoxScoreSu
     }
     const players = [...response.home.players, ...response.away.players]
     players.forEach(player => {
-      boxScoreData.value[player.player_id] = new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)
+      if (!player.is_inactive) boxScoreData.value[player.player_id] = new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)
     })
     isLoading.value = false
   })
@@ -176,14 +198,15 @@ const boxScoreRawDatacacheService = new CacheService<BoxScoreRawData>({
   maxItems: 10,
   cacheFilter: (_, data: unknown): data is BoxScoreRawData => isBoxScoreRawData(data),
 })
-const boxScoreRawData: BoxScoreRawData = ref<BoxScoreRawData>({})
+const boxScoreRawData = ref<BoxScoreRawData>({})
 boxScoreRawDatacacheService.getOrFetch(Number(props.gameId), () => getBoxScoreRawData(props.gameId))
   .then((response) => {
     boxScoreRawData.value = response
   })
 
 const updateBoxScoreData = (start_range: number, end_range: number) => {
-  for (const [player_id, box_score_raw] of Object.entries(boxScoreRawData.value)){
+  for (const [player_id_str, box_score_raw] of Object.entries(boxScoreRawData.value)){
+    const player_id = parseInt(player_id_str, 10)
     let start_box_score: number[] | null = null
     let end_box_score: number[] | null = null
     for (let i = 0; i < box_score_raw.length; i++) {

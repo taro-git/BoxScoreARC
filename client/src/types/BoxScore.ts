@@ -15,6 +15,7 @@ export interface BoxScoreRow {
   player_name: string
   jersey: string
   pos: string
+  is_inactive: boolean
   comulative_boxscore: number[]
 }
 

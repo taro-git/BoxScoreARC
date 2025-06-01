@@ -55,8 +55,7 @@
             >
             </th>
           </template>
-
-          <template v-else>
+          <template v-else-if="!row.is_inactive">
             <th :class="['left1-data', [rowIndex%2 !== 0 ? 'odd-row' : '']]">
               {{ `#${row.jersey}` }}
             </th>
@@ -76,6 +75,16 @@
             >
               {{ cell }}
             </td>
+          </template>
+          <template v-else>
+            <th :class="['left1-data', 'inactive']">
+              {{ `#${row.jersey}` }}
+            </th>
+            <th :class="['left2-data', 'inactive']">
+              {{ `${row.player_name} is inactive` }}
+            </th>
+            <th :class="'inactive'" :colspan="columns.length">
+            </th>
           </template>
         </tr>
       </tbody>
@@ -104,6 +113,7 @@ const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
     player_name: player.name,
     jersey: player.jersey,
     pos: player.position,
+    is_inactive: player.is_inactive,
     comulative_boxscore: props.boxScoreData.value[player.player_id] ?? []
   }))
   boxScoreRows.splice(5, 0, {
@@ -111,6 +121,7 @@ const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
     player_name: 'no data',
     jersey: '',
     pos: '',
+    is_inactive: false,
     comulative_boxscore: []
   })
   return boxScoreRows
@@ -244,4 +255,10 @@ const rows = computed(() => {
   background-color: #f1f1f1;
 }
 
+.inactive {
+  background-color: #999999;
+  text-align: left;
+  overflow: visible;
+  max-width: 0px;
+}
 </style>
