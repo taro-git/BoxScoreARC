@@ -28,22 +28,23 @@ class NBAApiTest(APIView):
             # playbyplay3 = playbyplayv3.PlayByPlayV3(game_id="0042400216")
             # df_playbyplay3 = pd.DataFrame(playbyplay3.play_by_play.get_data_frame())
             # df_playbyplay3_tyusyutsu = df_playbyplay3.loc[:, ['period', 'clock', 'teamTricode', 'personId','actionType', 'subType', 'description']]
-            playbyplay2 = playbyplayv2.PlayByPlayV2(game_id="0042400304") # 当日の試合でもある　試合中でもあるかは未確認
+            playbyplay2 = playbyplayv2.PlayByPlayV2(game_id="0042400216") # 当日の試合でもある　試合中でもあるかは未確認
             df_playbyplay2 = pd.DataFrame(playbyplay2.play_by_play.get_data_frame())   # PlayByPlayV2 を使う　理由は　asisst、steal、blockなどに明示的（笑）にplayerIDがつくから
-            boxScoreSummaryV2 = boxscoresummaryv2.BoxScoreSummaryV2(game_id="0042400304") # 当日の試合でもある　試合中でもあるかは未確認
-            inactive_players = boxScoreSummaryV2.inactive_players.get_data_frame() # インアクティブプレイヤーがわかる
-            game_summary = pd.DataFrame(boxScoreSummaryV2.game_summary.get_data_frame()) # home team id、away team id がわかる
-            line_score = pd.DataFrame(boxScoreSummaryV2.line_score.get_data_frame()) # team ごとの情報がある id 3文字の名前、クウォーターごとの得点
-            boxScoreTraditionalV2 = boxscoreplayertrackv3.BoxScorePlayerTrackV3(game_id="0020000905") # チームの選手一覧（ボックススコアあるけど不要）
-            player_stats = pd.DataFrame(boxScoreTraditionalV2.player_stats.get_data_frame())
+            # boxScoreSummaryV2 = boxscoresummaryv2.BoxScoreSummaryV2(game_id="0042400304") # 当日の試合でもある　試合中でもあるかは未確認
+            # inactive_players = boxScoreSummaryV2.inactive_players.get_data_frame() # インアクティブプレイヤーがわかる
+            # game_summary = pd.DataFrame(boxScoreSummaryV2.game_summary.get_data_frame()) # home team id、away team id がわかる
+            # line_score = pd.DataFrame(boxScoreSummaryV2.line_score.get_data_frame()) # team ごとの情報がある id 3文字の名前、クウォーターごとの得点
+            # boxScoreTraditionalV2 = boxscoreplayertrackv3.BoxScorePlayerTrackV3(game_id="0020000905") # チームの選手一覧（ボックススコアあるけど不要）
+            # player_stats = pd.DataFrame(boxScoreTraditionalV2.player_stats.get_data_frame())
             # boxScore = boxscore.BoxScore(game_id="0042400304") # 当日のデータも試合終わっちゃってるとない
             # df_boxScore = pd.DataFrame(boxScore.home_team.get_data_frame())
             # liveplaybyplay = playbyplay.PlayByPlay(game_id="0042400304") # 当日のデータも試合終わっちゃってるとない
             # df_liveplaybyplay = pd.DataFrame(liveplaybyplay.actions.get_data_frame()) 
             # print(df_games)
-            # print(df_playbyplay2)
+            # print(df_playbyplay2[df_playbyplay2["EVENTMSGTYPE"] == 9][["EVENTMSGACTIONTYPE","SCORE", "PERIOD","PCTIMESTRING","HOMEDESCRIPTION", "NEUTRALDESCRIPTION", "VISITORDESCRIPTION","PLAYER1_ID" ,"PLAYER1_NAME", "PLAYER2_NAME", "PLAYER3_NAME"]])
+            print(df_playbyplay2[df_playbyplay2["EVENTMSGTYPE"] == 4])
             # print(df_liveplaybyplay)
-            print(inactive_players)
+            # print(inactive_players)
             # print(game_summary)
             # print(line_score)
             # print(player_stats) # スターターの START_POSITION のみに値が入っているケースが多い。見分けつかなかったら上から表示しちゃえばいいと思う。
@@ -78,7 +79,7 @@ class NBAApiTest(APIView):
 
 
 
-            return Response(inactive_players.to_json(orient="records", indent=2), status=status.HTTP_200_OK)
+            return Response(df_playbyplay2.to_json(orient="records", indent=2), status=status.HTTP_200_OK)
 
         except Exception as e:
             print(e)

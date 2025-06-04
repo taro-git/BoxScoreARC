@@ -1,5 +1,5 @@
 export const BOX_SCORE_COLUMNS = [
-  'POS', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG', 'FG%', '3P', '3P%', 'FT', 'FT%', 'OREB', 'DREB', 'TO', 'PF', 'EFF', '+/-'
+  'POS', 'MIN', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG', 'FGA', 'FG%', '3P', '3PA', '3P%', 'FT', 'FTA', 'FT%', 'OREB', 'DREB', 'TO', 'PF', 'EFF', '+/-'
 ]
 
 export interface BoxScoreRawData {

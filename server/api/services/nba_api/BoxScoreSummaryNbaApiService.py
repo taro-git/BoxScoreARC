@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from nba_api.stats.endpoints import boxscoretraditionalv2, boxscoresummaryv2, boxscoreplayertrackv3
+from nba_api.stats.endpoints import boxscoresummaryv2, boxscoreplayertrackv3
 
 from ...models.nba_api.BoxScoreSummaryModel import Player, TeamSummary, BoxScoreSummary
 
