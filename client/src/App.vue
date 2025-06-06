@@ -1,15 +1,15 @@
 <template>
-  <div class="app">
-    <router-view />
-    
-    <footer class="footer">
-      <router-link to="/" class="nav">🏠<br>ホーム</router-link>
-      <router-link to="/games" class="nav">🏀<br>Games</router-link>
-      <router-link to="/news" class="nav">📰<br>ニュース</router-link>
-      <router-link to="/video" class="nav">▶️<br>ビデオ</router-link>
-      <router-link to="/data" class="nav">📊<br>データ</router-link>
-    </footer>
-  </div>
+    <div class="app">
+        <router-view />
+
+        <footer class="footer">
+            <router-link to="/" class="nav">🏠<br>ホーム</router-link>
+            <router-link to="/games" class="nav">🏀<br>Games</router-link>
+            <router-link to="/news" class="nav">📰<br>ニュース</router-link>
+            <router-link to="/video" class="nav">▶️<br>ビデオ</router-link>
+            <router-link to="/data" class="nav">📊<br>データ</router-link>
+        </footer>
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -18,26 +18,27 @@
 
 <style scoped>
 .app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
 .footer {
-  display: flex;
-  justify-content: space-around;
-  background-color: var(--footer-backgroud-color);
-  padding: 10px 0;
-  font-size: 12px;
-  height: var(--footer-height);
-  border-top: var(--border);
-  box-sizing: border-box;
-  flex-shrink: 0; /* フッターが縮小しない */
+    display: flex;
+    justify-content: space-around;
+    background-color: var(--footer-backgroud-color);
+    padding: 10px 0;
+    font-size: 12px;
+    height: var(--footer-height);
+    border-top: var(--border);
+    box-sizing: border-box;
+    flex-shrink: 0;
+    /* フッターが縮小しない */
 }
 
-.nav{
-  color: #fff;
-  text-decoration: none;
-  text-align: center;
+.nav {
+    color: #fff;
+    text-decoration: none;
+    text-align: center;
 }
 </style>
