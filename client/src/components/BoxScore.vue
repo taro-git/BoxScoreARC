@@ -49,7 +49,12 @@
                         <td :class="['data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]"
                             v-for="(cell, colIndex) in row.comulative_boxscore"
                             :key="'cell-' + rowIndex + '-' + colIndex">
-                            {{ cell }}
+                            <template v-if="colIndex == 8 || colIndex == 11 || colIndex == 14">
+                                {{ `${cell}%` }}
+                            </template>
+                            <template v-else>
+                                {{ cell }}
+                            </template>
                         </td>
                     </template>
                     <template v-else>

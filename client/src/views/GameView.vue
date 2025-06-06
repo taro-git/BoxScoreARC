@@ -12,7 +12,7 @@
         </div>
         <div v-if="activeTab === 'teamstats' || activeTab === 'boxscore'" class="game-clock">
             <label for="game-time">Game Clock Range</label>
-            <vue-slider class="game-clock-slider" v-model="gameClockRange" :max="maxMilliSeconds" :tooltip="'always'"
+            <vue-slider class="game-clock-slider" v-model="gameClockRange" :max="maxSeconds" :tooltip="'always'"
                 :tooltip-formatter="formatReminTime" :height="10" />
         </div>
         <component v-if="!isLoading" :is="currentTabComponent" v-bind="currentTabProps" />
@@ -61,37 +61,38 @@ const currentTabProps = computed(() => {
         default: return {
             boxScoreSummary: boxScoreSummary.value,
             boxScoreData: boxScoreData,
-            maxMilliSeconds: maxMilliSeconds,
+            maxSeconds: maxSeconds,
             gameClockRange: gameClockRange.value,
         }
     }
 })
 
-const maxMilliSeconds = (12 * 4 + 5 * 2) * 60 * 1000
+const maxSeconds = (12 * 4 + 5 * 2) * 60
 const gameClockRange = ref([0, 0])
 watch(gameClockRange, ([start_range, end_range]) => {
     updateBoxScoreData(start_range, end_range)
-    gameSummary.value.away_score = boxScoreSummary.value.away.players.map(player => player.player_id)
+    gameSummary.value.away_score = boxScoreSummary.value.away.players.filter(player => !player.is_inactive).map(player => player.player_id)
         .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
-    gameSummary.value.home_score = boxScoreSummary.value.home.players.map(player => player.player_id)
+    console.log(boxScoreSummary.value.home.players)
+    console.log(boxScoreData)
+    gameSummary.value.home_score = boxScoreSummary.value.home.players.filter(player => !player.is_inactive).map(player => player.player_id)
         .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
 })
 
-const formatReminTime = (milliSeconds: number) => {
+const formatReminTime = (seconds: number) => {
     let nth = ''
     let reminMinutes = 12
-    let reminMilliSeconds = 0
     let reminSeconds = 0
     let reminTime = ''
-    if (milliSeconds <= 48 * 60 * 1000) {
+    if (seconds <= 48 * 60) {
         let quarter = 0
-        if (milliSeconds % (12 * 60 * 1000) !== 0) {
-            quarter = Math.floor((milliSeconds) / (12 * 60 * 1000)) + 1
+        if (seconds % (12 * 60) !== 0) {
+            quarter = Math.floor((seconds) / (12 * 60)) + 1
         } else {
-            if (milliSeconds === 0) {
+            if (seconds === 0) {
                 quarter = 1
             } else {
-                quarter = Math.floor((milliSeconds) / (12 * 60 * 1000))
+                quarter = Math.floor((seconds) / (12 * 60))
             }
         }
         switch (quarter) {
@@ -108,28 +109,27 @@ const formatReminTime = (milliSeconds: number) => {
                 nth = '4th Q.'
                 break
         }
-        reminMilliSeconds = quarter * 12 * 60 * 1000 - milliSeconds
-        reminMinutes = Math.floor(reminMilliSeconds / (60 * 1000))
-        reminMilliSeconds = reminMilliSeconds % (60 * 1000)
+        reminSeconds = quarter * 12 * 60 - seconds
+        reminMinutes = Math.floor(reminSeconds / 60)
+        reminSeconds = reminSeconds % 60
     } else {
-        const otMilliSeconds = milliSeconds - 48 * 60 * 1000
+        const otSeconds = seconds - 48 * 60
         let ot = 0
-        if (otMilliSeconds % (5 * 60 * 1000) !== 0) {
-            ot = Math.floor(otMilliSeconds / (5 * 60 * 1000)) + 1
+        if (otSeconds % (5 * 60) !== 0) {
+            ot = Math.floor(otSeconds / (5 * 60)) + 1
         } else {
-            ot = Math.floor(otMilliSeconds / (5 * 60 * 1000))
+            ot = Math.floor(otSeconds / (5 * 60))
         }
         nth = `OT${ot}`
-        reminMilliSeconds = ot * 5 * 60 * 1000 - otMilliSeconds
-        reminMinutes = Math.floor(reminMilliSeconds / (60 * 1000))
-        reminMilliSeconds = reminMilliSeconds % (60 * 1000)
+        reminSeconds = ot * 5 * 60 - otSeconds
+        reminMinutes = Math.floor(reminSeconds / 60)
+        reminSeconds = reminSeconds % 60
     }
     if (reminMinutes === 0) {
-        reminSeconds = reminMilliSeconds / 1000
         const roundedReminSeconds = reminSeconds.toFixed(1)
         reminTime = `${roundedReminSeconds} s`
     } else {
-        reminSeconds = Math.floor(reminMilliSeconds / 1000)
+        reminSeconds = Math.floor(reminSeconds)
         const paddedReminMinutes = String(reminMinutes).padStart(2, '0')
         const paddedReminSeconds = String(reminSeconds).padStart(2, '0')
         reminTime = `${paddedReminMinutes}:${paddedReminSeconds}`
@@ -232,19 +232,19 @@ const calcShootingPercentage = (boxScoraRow: number[]) => {
     }
 
     if (boxScoraRow[7] !== 0) {
-        result[8] = Math.round((boxScoraRow[6] / boxScoraRow[7]) * 100);
+        result[8] = Math.round((boxScoraRow[6] / boxScoraRow[7]) * 100 * 10) / 10;
     } else {
         result[8] = 0;
     }
 
     if (boxScoraRow[10] !== 0) {
-        result[11] = Math.round((boxScoraRow[9] / boxScoraRow[10]) * 100);
+        result[11] = Math.round((boxScoraRow[9] / boxScoraRow[10]) * 100 * 10) / 10;
     } else {
         result[11] = 0;
     }
 
     if (boxScoraRow[13] !== 0) {
-        result[14] = Math.round((boxScoraRow[12] / boxScoraRow[13]) * 100);
+        result[14] = Math.round((boxScoraRow[12] / boxScoraRow[13]) * 100 * 10) / 10;
     } else {
         result[14] = 0;
     }
@@ -253,7 +253,7 @@ const calcShootingPercentage = (boxScoraRow: number[]) => {
 
 const convertPlayTimeToMin = (boxScoraRow: number[]) => {
     let result = boxScoraRow
-    result[0] = Math.round(boxScoraRow[0] / 60 / 1000)
+    result[0] = Math.round(boxScoraRow[0] / 60 * 10) / 10
     return result
 }
 

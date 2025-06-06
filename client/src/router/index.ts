@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import GamesView from '@/views/GamesView.vue'
 import GameView from '@/views/GameView.vue'
-import TestClickhouse from '@/views/TestClickhouse.vue'
-import TestNBAAPI from '@/views/TestNBAAPI.vue'
+import AnalysysView from '@/views/AnalysysView.vue'
+import DataView from '@/views/DataView.vue'
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -17,14 +17,14 @@ const routes: Array<RouteRecordRaw> = [
         props: true
     },
     {
-        path: '/news',
-        name: 'ClickhouseTest',
-        component: TestClickhouse
+        path: '/analysys',
+        name: 'analysys',
+        component: AnalysysView
     },
     {
-        path: '/video',
-        name: 'NBAAPITest',
-        component: TestNBAAPI
+        path: '/data',
+        name: 'data',
+        component: DataView
     }
 ]
 

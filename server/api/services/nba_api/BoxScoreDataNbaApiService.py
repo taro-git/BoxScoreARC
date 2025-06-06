@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from nba_api.stats.endpoints import playbyplayv2
 
 from ...models.nba_api.BoxScoreDataModel import BoxScoreData
+from .BoxScoreSummaryNbaApiService import BoxScoreSummaryNbaApiService
 
 ALLOWED_KEYS: SimpleNamespace = SimpleNamespace(
     MIN=0, PTS=1, REB=2, AST=3, STL=4, BLK=5, FG=6, FGA=7, FG_PCT=8,
@@ -41,16 +42,16 @@ class BoxScoreDataNbaApiService:
         # 18: チャレンジによるインスタントリプレイ 同じゲームクロックでタイムアウトのチームが申請
         last_score = '0 - 0'
         last_elapsed_seconds = 0
-        # MYTODO min を正しくする スタメンをどっかから取得してこないとあかん、クウォーター間の選手交代もplaybyplay に出てるか確認
-        on_court_player_id = []
+        # MYTODO min と +/- が正しくない⇒おそらくクウォーター間の交代が playbyplay に反映されないことが原因。nba_api の仕様上対応不可能かもしれない
+        box_score_summary = BoxScoreSummaryNbaApiService().get_box_score_summary(game_id)
+        on_court_away_player_id = [box_score_summary.away.players[i].player_id for i in range(5)]
+        on_court_home_player_id = [box_score_summary.home.players[i].player_id for i in range(5)]
         for one_play in play_by_play.itertuples():
             elapsed_seconds = self._get_elapsed_seconds(one_play.PERIOD, one_play.PCTIMESTRING)
             score_diff = self._calc_score_diff(one_play.SCORE, last_score)
-            for player_id in on_court_player_id:
+            for player_id in on_court_away_player_id + on_court_home_player_id:
                 self._append_box_score(player_id, elapsed_seconds, {
-                    ALLOWED_KEYS.MIN: elapsed_seconds - last_elapsed_seconds,
-                    # MYTODO +/- を正しくする。敵味方の区別をつける
-                    ALLOWED_KEYS.PLUS_MINUS: score_diff
+                    ALLOWED_KEYS.MIN: elapsed_seconds - last_elapsed_seconds
                 })
             match one_play.EVENTMSGTYPE:
                 case 1:
@@ -67,6 +68,24 @@ class BoxScoreDataNbaApiService:
                             ALLOWED_KEYS.AST: 1,
                             ALLOWED_KEYS.EFF: 1,
                         })
+                    if one_play.PLAYER1_ID in on_court_away_player_id:
+                        for away_player_id in on_court_away_player_id:
+                            self._append_box_score(away_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: score_diff,
+                            })
+                        for home_player_id in on_court_home_player_id:
+                            self._append_box_score(home_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: -score_diff,
+                            })
+                    else:
+                        for home_player_id in on_court_home_player_id:
+                            self._append_box_score(home_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: score_diff,
+                            })
+                        for away_player_id in on_court_away_player_id:
+                            self._append_box_score(away_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: -score_diff,
+                            })
                 case 2:
                     self._append_box_score(one_play.PLAYER1_ID, elapsed_seconds, {
                         ALLOWED_KEYS.FGA: 1,
@@ -86,6 +105,24 @@ class BoxScoreDataNbaApiService:
                         ALLOWED_KEYS.FTA: 1,
                         ALLOWED_KEYS.EFF: score_diff + (score_diff - 1)
                     })
+                    if one_play.PLAYER1_ID in on_court_away_player_id:
+                        for away_player_id in on_court_away_player_id:
+                            self._append_box_score(away_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: score_diff,
+                            })
+                        for home_player_id in on_court_home_player_id:
+                            self._append_box_score(home_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: -score_diff,
+                            })
+                    else:
+                        for home_player_id in on_court_home_player_id:
+                            self._append_box_score(home_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: score_diff,
+                            })
+                        for away_player_id in on_court_away_player_id:
+                            self._append_box_score(away_player_id, elapsed_seconds, {
+                                ALLOWED_KEYS.PLUS_MINUS: -score_diff,
+                            })
                 case 4:
                     cumulative_reb = self._extract_off_def(one_play.HOMEDESCRIPTION, one_play.VISITORDESCRIPTION)
                     player_last_data = self.box_score_data.data[one_play.PLAYER1_ID][-1][1] if self.box_score_data.data[one_play.PLAYER1_ID] else [0] * len(vars(ALLOWED_KEYS))
@@ -112,10 +149,14 @@ class BoxScoreDataNbaApiService:
                     })
                 case 8:
                     try: 
-                        on_court_player_id.remove(one_play.PLAYER1_ID)
+                        if one_play.PLAYER1_ID in on_court_away_player_id:
+                            on_court_away_player_id.remove(one_play.PLAYER1_ID)
+                            on_court_away_player_id.append(one_play.PLAYER2_ID)
+                        else:
+                            on_court_home_player_id.remove(one_play.PLAYER1_ID)
+                            on_court_home_player_id.append(one_play.PLAYER2_ID)
                     except:
                         pass
-                    on_court_player_id.append(one_play.PLAYER2_ID)
             last_elapsed_seconds = elapsed_seconds
             if score_diff != 0:
                 last_score = one_play.SCORE
@@ -128,8 +169,7 @@ class BoxScoreDataNbaApiService:
         remaining_seconds = minutes * 60 + seconds
 
         elapsed_seconds = (quarter - 1) * quarter_length + (quarter_length - remaining_seconds)
-        # MYTODO vue 側でミリ秒で実装してしまっているので、とりあえず合わせている。vue と合わせて修正。
-        return elapsed_seconds*1000
+        return elapsed_seconds
     
     def _calc_score_diff(self, score1: str, score2: str) -> int:
         if score1 == None or score2 == None:
