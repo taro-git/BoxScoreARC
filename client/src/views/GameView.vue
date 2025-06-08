@@ -73,8 +73,6 @@ watch(gameClockRange, ([start_range, end_range]) => {
     updateBoxScoreData(start_range, end_range)
     gameSummary.value.away_score = boxScoreSummary.value.away.players.filter(player => !player.is_inactive).map(player => player.player_id)
         .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
-    console.log(boxScoreSummary.value.home.players)
-    console.log(boxScoreData)
     gameSummary.value.home_score = boxScoreSummary.value.home.players.filter(player => !player.is_inactive).map(player => player.player_id)
         .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
 })

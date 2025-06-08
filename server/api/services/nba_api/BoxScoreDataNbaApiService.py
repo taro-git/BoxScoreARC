@@ -1,6 +1,7 @@
 import re
+import pandas as pd
 from types import SimpleNamespace
-from nba_api.stats.endpoints import playbyplayv2
+from nba_api.stats.endpoints import playbyplayv2, boxscoretraditionalv3
 
 from ...models.nba_api.BoxScoreDataModel import BoxScoreData
 from .BoxScoreSummaryNbaApiService import BoxScoreSummaryNbaApiService
@@ -42,17 +43,32 @@ class BoxScoreDataNbaApiService:
         # 18: チャレンジによるインスタントリプレイ 同じゲームクロックでタイムアウトのチームが申請
         last_score = '0 - 0'
         last_elapsed_seconds = 0
-        # MYTODO min と +/- が正しくない⇒おそらくクウォーター間の交代が playbyplay に反映されないことが原因。nba_api の仕様上対応不可能かもしれない
+        # MYTODO min と +/- が正しくない⇒クウォーター間の交代が playbyplay に反映されないことが原因。boxscoretraditionalv3 の end_range, start_rangeで対応可能　スタメンもこれで対応した方がよさげ
         box_score_summary = BoxScoreSummaryNbaApiService().get_box_score_summary(game_id)
         on_court_away_player_id = [box_score_summary.away.players[i].player_id for i in range(5)]
         on_court_home_player_id = [box_score_summary.home.players[i].player_id for i in range(5)]
+        change_period_flag = False
         for one_play in play_by_play.itertuples():
             elapsed_seconds = self._get_elapsed_seconds(one_play.PERIOD, one_play.PCTIMESTRING)
-            score_diff = self._calc_score_diff(one_play.SCORE, last_score)
+            elapsed_seconds_diff = elapsed_seconds - last_elapsed_seconds
+            if change_period_flag and elapsed_seconds_diff != 0:
+                on_court_player_id = self._update_on_court_player_id(
+                    game_id=game_id,
+                    on_court_away_player_id=on_court_away_player_id,
+                    on_court_home_player_id=on_court_home_player_id,
+                    away_team_id=box_score_summary.away.team_id,
+                    home_team_id=box_score_summary.home.team_id,
+                    elapsed_seconds_untill_first_play=elapsed_seconds_diff,
+                    period=one_play.PERIOD
+                )
+                on_court_away_player_id = on_court_player_id['away']
+                on_court_home_player_id = on_court_player_id['home']
+                change_period_flag = False
             for player_id in on_court_away_player_id + on_court_home_player_id:
                 self._append_box_score(player_id, elapsed_seconds, {
-                    ALLOWED_KEYS.MIN: elapsed_seconds - last_elapsed_seconds
+                    ALLOWED_KEYS.MIN: elapsed_seconds_diff
                 })
+            score_diff = self._calc_score_diff(one_play.SCORE, last_score)
             match one_play.EVENTMSGTYPE:
                 case 1:
                     self._append_box_score(one_play.PLAYER1_ID, elapsed_seconds, {
@@ -156,7 +172,11 @@ class BoxScoreDataNbaApiService:
                             on_court_home_player_id.remove(one_play.PLAYER1_ID)
                             on_court_home_player_id.append(one_play.PLAYER2_ID)
                     except:
-                        pass
+                        print("error on_court_player")
+                        print(on_court_away_player_id)
+                        print(on_court_home_player_id)
+                case 12:
+                    change_period_flag = True
             last_elapsed_seconds = elapsed_seconds
             if score_diff != 0:
                 last_score = one_play.SCORE
@@ -164,11 +184,15 @@ class BoxScoreDataNbaApiService:
     
     def _get_elapsed_seconds(self, quarter: int, game_clock: str) -> int:
         quarter_length = 12 * 60 
+        over_time_length = 5 * 60
 
         minutes, seconds = map(int, game_clock.split(":"))
         remaining_seconds = minutes * 60 + seconds
 
-        elapsed_seconds = (quarter - 1) * quarter_length + (quarter_length - remaining_seconds)
+        if quarter <= 4:
+            elapsed_seconds = (quarter - 1) * quarter_length + (quarter_length - remaining_seconds)
+        else:
+            elapsed_seconds = 4 * 12 * 60 + (quarter - 5) * over_time_length + (over_time_length - remaining_seconds)
         return elapsed_seconds
     
     def _calc_score_diff(self, score1: str, score2: str) -> int:
@@ -209,3 +233,80 @@ class BoxScoreDataNbaApiService:
             y = int(match.group(2))
             return {"off": x, "def": y}
         return {"off": 0, "def": 0}
+
+    def _convert_clock_to_seconds(self, clock: str) -> int:
+        minutes, seconds = map(int, clock.split(":"))
+        return minutes * 60 + seconds
+
+    def _update_on_court_player_id(
+        self,
+        game_id: str,
+        on_court_away_player_id: list[int],
+        on_court_home_player_id: list[int],
+        away_team_id: int,
+        home_team_id: int,
+        elapsed_seconds_untill_first_play: int,
+        period: int,
+    ) -> dict:
+        pd.set_option('display.max_rows', None)        # 行をすべて表示
+        pd.set_option('display.max_columns', None)     # 列をすべて表示
+        pd.set_option('display.width', None)           # 横幅による折返しを防止
+        pd.set_option('display.max_colwidth', None)    # 各列の内容の最大文字数
+        if period <= 4:
+            period_start_seconds = 12 * 60 * (period - 1)
+        else:
+            period_start_seconds = 4 * 12 * 60 + 5 * 60 * (period - 5)
+        box_score_traditional_v3 = boxscoretraditionalv3.BoxScoreTraditionalV3(
+            game_id=game_id,
+            start_period="0",
+            start_range=str(period_start_seconds * 10),
+            end_period="0",
+            end_range=str((period_start_seconds + elapsed_seconds_untill_first_play) * 10),
+            range_type="2",
+        )
+        player_stats = box_score_traditional_v3.player_stats.get_data_frame()
+        away_player_stats = player_stats[
+            (player_stats["teamId"] == away_team_id) &
+            (player_stats["minutes"].apply(self._convert_clock_to_seconds) >= elapsed_seconds_untill_first_play)
+        ]
+        home_player_stats = player_stats[
+            (player_stats["teamId"] == home_team_id) &
+            (player_stats["minutes"].apply(self._convert_clock_to_seconds) >= elapsed_seconds_untill_first_play)
+        ]
+        away_player_id = []
+        if len(away_player_stats) == 5:
+            away_player_id = away_player_stats["personId"].tolist()
+        elif len(away_player_stats["minutes"].unique()) == 3:
+            away_seconds_with_ended_period = away_player_stats["minutes"].apply(self._convert_clock_to_seconds).max()
+            away_player_id = away_player_stats[
+                (away_player_stats["minutes"].apply(self._convert_clock_to_seconds) == elapsed_seconds_untill_first_play) |
+                (away_player_stats["minutes"].apply(self._convert_clock_to_seconds) == away_seconds_with_ended_period)
+            ]["personId"].tolist()
+        elif len(away_player_stats["minutes"].unique()) == 1:
+            away_player_id = away_player_stats[away_player_stats["personId"].isin(on_court_away_player_id)]["personId"].tolist()
+        elif len(away_player_stats["minutes"].unique()) == 2:
+            away_seconds_with_ended_period = away_player_stats["minutes"].apply(self._convert_clock_to_seconds).max()
+            away_player_id = away_player_stats[
+                (away_player_stats["minutes"].apply(self._convert_clock_to_seconds) == away_seconds_with_ended_period) |
+                (away_player_stats["personId"].isin(on_court_away_player_id))
+            ]["personId"].tolist()
+
+        home_player_id = []
+        if len(home_player_stats) == 5:
+            home_player_id = home_player_stats["personId"].tolist()
+        elif len(home_player_stats["minutes"].unique()) == 3:
+            home_seconds_with_ended_period = home_player_stats["minutes"].apply(self._convert_clock_to_seconds).max()
+            home_player_id = home_player_stats[
+                (home_player_stats["minutes"].apply(self._convert_clock_to_seconds) == elapsed_seconds_untill_first_play) |
+                (home_player_stats["minutes"].apply(self._convert_clock_to_seconds) == home_seconds_with_ended_period)
+            ]["personId"].tolist()
+        elif len(home_player_stats["minutes"].unique()) == 1:
+            home_player_id = home_player_stats[home_player_stats["personId"].isin(on_court_home_player_id)]["personId"].tolist()
+        elif len(home_player_stats["minutes"].unique()) == 2:
+            home_seconds_with_ended_period = home_player_stats["minutes"].apply(self._convert_clock_to_seconds).max()
+            home_player_id = home_player_stats[
+                (home_player_stats["minutes"].apply(self._convert_clock_to_seconds) == home_seconds_with_ended_period) |
+                (home_player_stats["personId"].isin(on_court_home_player_id))
+            ]["personId"].tolist()
+
+        return {'away': away_player_id, 'home': home_player_id}
