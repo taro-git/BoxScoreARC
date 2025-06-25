@@ -4,7 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+ARG MODE=production
+RUN npm run build -- --mode $MODE
 
 # 本番環境
 FROM nginx:stable-alpine AS prod

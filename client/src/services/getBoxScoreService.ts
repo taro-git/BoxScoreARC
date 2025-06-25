@@ -3,10 +3,10 @@ import axios from 'axios'
 import { BoxScoreSummary } from '@/types/BoxScoreSummary'
 import { BoxScoreRawData } from '@/types/BoxScore'
 
-const API_BASE_URL = 'http://172.16.0.62:1026/api/nba'
+const API_BASE_URL = process.env.VUE_APP_API_BASE_URL
 
 export const getBoxScoreSummary = async (gameId: string): Promise<BoxScoreSummary> => {
-    const response = await axios.get(`${API_BASE_URL}/box-score-summary/`, {
+    const response = await axios.get(`${API_BASE_URL}/nba/box-score-summary/`, {
         params: {
             gameId: gameId
         }
@@ -36,7 +36,7 @@ export const isBoxScoreSummary = (item: any) => {
 }
 
 export const getBoxScoreRawData = async (gameId: string): Promise<BoxScoreRawData> => {
-    const response = await axios.get(`${API_BASE_URL}/box-score-data/`, {
+    const response = await axios.get(`${API_BASE_URL}/nba/box-score-data/`, {
         params: {
             gameId: gameId
         }

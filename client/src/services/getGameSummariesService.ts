@@ -1,7 +1,7 @@
 import { GameSummary } from '@/types/GameSummary'
 import axios from 'axios'
 
-const API_BASE_URL = 'http://172.16.0.62:1026/api/nba'
+const API_BASE_URL = process.env.VUE_APP_API_BASE_URL
 
 function formatDateToYYYYMMDD(dateArg: Date): string {
     const year = dateArg.getFullYear()
@@ -11,7 +11,7 @@ function formatDateToYYYYMMDD(dateArg: Date): string {
 }
 
 export const getGameSummaries = async (date: Date): Promise<GameSummary[]> => {
-    const response = await axios.get(`${API_BASE_URL}/game-summaries/`, {
+    const response = await axios.get(`${API_BASE_URL}/nba/game-summaries/`, {
         params: {
             date: formatDateToYYYYMMDD(date)
         }
@@ -21,7 +21,7 @@ export const getGameSummaries = async (date: Date): Promise<GameSummary[]> => {
 
 export const getGameSummary = async (gameId: string): Promise<GameSummary> => {
     // まだ存在しない
-    // const response = await axios.get(`${API_BASE_URL}/game-summary/`, {
+    // const response = await axios.get(`${API_BASE_URL}/nba/game-summary/`, {
     //   params: {
     //     gameId: gameId
     // }})

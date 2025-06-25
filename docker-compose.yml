@@ -4,6 +4,8 @@ services:
   client:
     build:
       context: ./client
+      args:
+        MODE: development # development or production
     ports:
       - "1024:80"
     restart: "always"
