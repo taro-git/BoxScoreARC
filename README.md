@@ -8,8 +8,17 @@ backend server: Django (python)
 database: Clickhouse
 
 # Build
-Run following commands in Docker environment  
 ### for production
-`docker compose --profile prod up --build -d`
+1. Run following commands in Docker environment  
+    ```sh
+    docker compose --profile prod up --build -d
+    ```
 ### for development
-`docker compose --profile dev up --build -d`
+1. if build in linux envivonment, you need to run following command before docker compose up.  
+    ```sh
+    chmod +x ./server/entrypoint.sh
+    ```
+1. Run following commands in Docker environment  
+    ```sh
+    docker compose --profile dev up --build -d
+    ```
