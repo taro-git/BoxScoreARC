@@ -3,10 +3,13 @@ This code is source of the application that provide NBA game's box score with ga
 User can specify any start and end point of the game clock and display the box score between them.  
 
 # OSS
-web server: nginx  
 client: Vue (typescript)  
 backend server: Django (python)  
+database: Clickhouse
 
-# how to build
-build docker image.  
-`docker-compose up --build`  
+# Build
+Run following commands in Docker environment  
+### for production
+`docker compose --profile prod up --build -d`
+### for development
+`docker compose --profile dev up --build -d`

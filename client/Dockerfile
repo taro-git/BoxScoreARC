@@ -1,11 +1,18 @@
+# 開発環境
+FROM node:lts-alpine AS dev
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+CMD ["npm", "run", "serve"]
+
+
 # ビルド環境
 FROM node:lts-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-ARG MODE=production
-RUN npm run build -- --mode $MODE
+RUN npm run build -- --mode production
 
 # 本番環境
 FROM nginx:stable-alpine AS prod
