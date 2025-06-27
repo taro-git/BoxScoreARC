@@ -2,7 +2,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from typing import List
 
-from api_project.clickhouse_client import get_clickhouse_client
+from project_box_score_arc.clickhouse_client import get_clickhouse_client
 from ...models.nba_api.GameSummaryModel import GameSummary
 from ...models.clickhouse.GameSummaryForClickhouseModel import GameSummaryForClickhouse
 

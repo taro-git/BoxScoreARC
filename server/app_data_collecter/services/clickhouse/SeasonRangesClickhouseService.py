@@ -1,6 +1,6 @@
 
 from typing import List, Optional
-from api_project.clickhouse_client import get_clickhouse_client
+from project_box_score_arc.clickhouse_client import get_clickhouse_client
 
 from ...models.clickhouse.SeasonRangeForClickhouseModel import SeasonRangeForClickhouse
 

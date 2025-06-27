@@ -1,5 +1,5 @@
 """
-URL configuration for api_project project.
+URL configuration for project_box_score_arc project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
@@ -19,5 +19,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('api.urls')),
+    path('', include('app_data_collecter.urls')),
 ]
