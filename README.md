@@ -9,6 +9,10 @@ database: Clickhouse
 
 # Build
 ### for production
+1. create env file `client/env.development` and add following text in the file.
+   ```
+   VUE_APP_API_BASE_URL=http://<<your host name>>:1026/api
+   ```
 1. Run following commands in Docker environment  
     ```sh
     docker compose --profile prod up --build -d
