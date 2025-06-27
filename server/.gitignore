@@ -1,2 +1,5 @@
 # virtual env
 env/
+
+# cache
+**/__pycache__/
