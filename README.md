@@ -1,5 +1,5 @@
 # About BoxScoreARC
-This code is source of the application that provide NBA game's Box Score in Arbitrary Range of game Clock.  
+This code is source of the application that provide NBA game's **Box Score in Arbitrary Range of game Clock**.  
 User can specify any start and end point of the game clock and display the box score between them.  
 
 # OSS
