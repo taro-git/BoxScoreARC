@@ -43,7 +43,6 @@ services:
       - DB_USER=box_score_arc_user
       - DB_PASSWORD=box_score_arc_password
     depends_on:
-      - clickhouse
       - postgres
   server-prod:
     profiles: ["prod"]
@@ -61,19 +60,7 @@ services:
       - DB_USER=box_score_arc_user
       - DB_PASSWORD=box_score_arc_password
     depends_on:
-      - clickhouse
       - postgres
-
-  clickhouse:
-    image: clickhouse/clickhouse-server:latest
-    ports:
-      - "8123:8123"  # HTTP
-      - "9000:9000"  # Native
-    restart: "always"
-    volumes:
-      - clickhouse_data:/var/lib/clickhouse
-      - ./database/clickhouse/config/user.xml:/etc/clickhouse-server/users.d/default-user.xml:ro
-      - ./database/clickhouse/config/custom_config.xml:/etc/clickhouse-server/config.d/custom_config.xml:ro
   
   postgres:
     image: postgres:15
@@ -88,6 +75,4 @@ services:
       - postgresql_data:/var/lib/postgresql/data
 
 volumes:
-  clickhouse_data:
-    name: clickhouse_data 
   postgresql_data:

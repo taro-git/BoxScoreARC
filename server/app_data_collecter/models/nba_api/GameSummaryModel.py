@@ -1,5 +1,8 @@
+from datetime import date
 from typing import Literal
 from dataclasses import dataclass, field
+
+from ..postgres.GameSummaryForPostgresModel import GameSummaryForPostgres
 
 TeamAbbreviation = Literal[
     'BOS', 'BKN', 'NYK', 'PHI', 'TOR', 'CHI', 'CLE', 'DET', 'IND', 'MIL', 'ATL', 'CHA', 'MIA', 'ORL', 'WAS',
@@ -63,6 +66,7 @@ class GameSummary:
     status_text: str = 'Final' # status_id=1 -> h:mm pm/am ET, status_id=2 -> 1st Qtr etc., status_id=3 -> Final
     live_period: int = 4
     live_clock: str = '00:00'
+    game_date_jst: date
     game_category: str = field(init=False)
 
     def __post_init__(self):
@@ -70,3 +74,33 @@ class GameSummary:
         self.away_logo = TEAM_LOGO.get(self.away_team,'')
         self.game_category = GAME_CATEGORY.get(self.game_id[2], 'Unknown')
 
+    @classmethod
+    def from_postgres_model(cls, model: GameSummaryForPostgres) -> "GameSummary":
+        return cls(
+            game_id=model.game_id,
+            home_team=model.home_team,
+            home_score=model.home_score,
+            away_team=model.away_team,
+            away_score=model.away_score,
+            game_sequence=model.game_sequence,
+            status_id=model.status_id,
+            status_text=model.status_text,
+            live_period=model.live_period,
+            live_clock=model.live_clock,
+            game_date_jst=model.game_date_jst
+        )
+
+    def to_postgres_model(self) -> GameSummaryForPostgres:
+        return GameSummaryForPostgres(
+            game_id=self.game_id,
+            home_team=self.home_team,
+            home_score=self.home_score,
+            away_team=self.away_team,
+            away_score=self.away_score,
+            game_sequence=self.game_sequence,
+            status_id=self.status_id,
+            status_text=self.status_text,
+            live_period=self.live_period,
+            live_clock=self.live_clock,
+            game_date_jst=self.game_date_jst
+        )

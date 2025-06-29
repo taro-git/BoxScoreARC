@@ -96,13 +96,6 @@ DATABASES = {
     }
 }
 
-CLICKHOUSE_HOST = 'clickhouse'
-CLICKHOUSE_PORT = 8123
-CLICKHOUSE_USER = 'default'
-CLICKHOUSE_PASSWORD = 'clickhouse_default_password'
-CLICKHOUSE_DATABASE = 'default'
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 

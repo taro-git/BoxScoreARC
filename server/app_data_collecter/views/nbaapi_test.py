@@ -8,8 +8,6 @@ import pandas as pd
 from nba_api.stats.endpoints import leaguegamefinder
 from nba_api.stats.endpoints import playbyplayv3, playbyplayv2, scoreboardv2, boxscoretraditionalv2, boxscoresummaryv2, boxscoretraditionalv3, boxscoreplayertrackv3
 from nba_api.live.nba.endpoints import playbyplay, boxscore
-from ..models.clickhouse.GameSummaryForClickhouseModel import GameSummaryForClickhouse
-from ..services.clickhouse.GameSummariesClickhouseService import GameSummariesClickhouseService
 
 
 class NBAApiTest(APIView):
@@ -59,24 +57,6 @@ class NBAApiTest(APIView):
             # 2019-20 0021900917
             # 2010-11 0021000294
             # 2000-01 0020000905
-
-            # game_summaries_for_clickhouse = GameSummaryForClickhouse(
-            #     game_id='0022400174',
-            #     home_team='MEM',
-            #     home_score=131,
-            #     away_team='LAL',
-            #     away_score=114,
-            #     game_sequence=6,
-            #     status_id=3,
-            #     status_text='Final',
-            #     live_period=4,
-            #     live_clock='00:00',
-            #     game_date_jst='2024-11-07'
-            # )
-
-            # test_clickhouse = GameSummariesClickhouseService(table_name='test')
-            # test_clickhouse.upsert_game_summaries([game_summaries_for_clickhouse])
-            # print(test_clickhouse.get_game_summaries())
 
 
 

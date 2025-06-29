@@ -3,14 +3,17 @@ from datetime import datetime, timedelta
 
 from nba_api.stats.endpoints import leaguegamefinder, scoreboardv2
 
-from ...models.clickhouse.GameSummaryForClickhouseModel import GameSummaryForClickhouse
 from ...models.nba_api.GameSummaryModel import GameSummary
+from ..common.TimeAdjustService import TimeAdjustService
 
 
 class GameSummariesNbaApiService:
 
-    def get_recent_game_summaries(self, date: datetime) -> List[GameSummary]:
-        scoreboard = scoreboardv2.ScoreboardV2(game_date=date.strftime("%Y-%m-%d"))
+    def __init__(self, timeAdjustService=None):
+        self.timeAdjustService = timeAdjustService or TimeAdjustService()
+
+    def get_recent_game_summaries(self, date_jst: datetime) -> List[GameSummary]:
+        scoreboard = scoreboardv2.ScoreboardV2(game_date=self.timeAdjustService.convert_tz_to_est(date_jst).strftime("%Y-%m-%d"))
         game_header = scoreboard.game_header.get_data_frame()
         line_score = scoreboard.line_score.get_data_frame()
 
@@ -34,16 +37,17 @@ class GameSummariesNbaApiService:
                     status_text=filtered_game_header["GAME_STATUS_TEXT"].iloc[0],
                     live_period=filtered_game_header["LIVE_PERIOD"].iloc[0],
                     live_clock=filtered_game_header["LIVE_PC_TIME"].iloc[0],
+                    game_date_jst=date_jst.date()
                 )
             )
         
         return game_summaries
     
-    def get_past_game_summaries_for_clickhouse(self, season: str) -> List[GameSummaryForClickhouse]:
+    def get_past_game_summaries(self, season: str) -> List[GameSummary]:
         league_game_finder = leaguegamefinder.LeagueGameFinder(season_nullable=season, league_id_nullable="00")
         league_game_finder_results = league_game_finder.league_game_finder_results.get_data_frame()
 
-        game_summaries: List[GameSummaryForClickhouse] = []
+        game_summaries: List[GameSummary] = []
         game_ids = league_game_finder_results["GAME_ID"].drop_duplicates().tolist()
 
         for game_id in game_ids:
@@ -60,13 +64,13 @@ class GameSummariesNbaApiService:
                 home_team = teams_for_game[teams_for_game["TEAM_ABBREVIATION"] == home_team_abbreviation]
                 away_team = teams_for_game[teams_for_game["TEAM_ABBREVIATION"] != home_team_abbreviation]
                 if len(home_team) != 1 or len(away_team) != 1:
-                    game_summaries.append(GameSummaryForClickhouse(game_id=game_id, game_date_jst=game_date_jst))
+                    game_summaries.append(GameSummary(game_id=game_id, game_date_jst=game_date_jst))
                     continue
             else:
-                game_summaries.append(GameSummaryForClickhouse(game_id=game_id, game_date_jst=game_date_jst))
+                game_summaries.append(GameSummary(game_id=game_id, game_date_jst=game_date_jst))
                 continue
             game_summaries.append(
-                GameSummaryForClickhouse(
+                GameSummary(
                     game_id=game_id,
                     home_team=home_team["TEAM_ABBREVIATION"].iloc[0],
                     home_score=home_team["PTS"].iloc[0],
