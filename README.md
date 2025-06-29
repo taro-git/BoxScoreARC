@@ -5,7 +5,7 @@ User can specify any start and end point of the game clock and display the box s
 # OSS
 client: Vue (typescript)  
 backend server: Django (python)  
-database: Clickhouse
+database: PostgreSQL
 
 # Build
 ### for production
