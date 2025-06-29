@@ -29,6 +29,7 @@ services:
     profiles: ["dev"]
     build:
       context: ./server
+      target: dev
     volumes:
       - ./server:/app
     ports:
@@ -36,19 +37,32 @@ services:
     restart: "always"
     environment:
       - PYTHONPATH=/app
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_score_arc
+      - DB_USER=box_score_arc_user
+      - DB_PASSWORD=box_score_arc_password
     depends_on:
       - clickhouse
+      - postgres
   server-prod:
     profiles: ["prod"]
     build:
       context: ./server
+      target: prod
     ports:
       - "1026:8000"
     restart: "always"
     environment:
       - PYTHONPATH=/app
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_score_arc
+      - DB_USER=box_score_arc_user
+      - DB_PASSWORD=box_score_arc_password
     depends_on:
       - clickhouse
+      - postgres
 
   clickhouse:
     image: clickhouse/clickhouse-server:latest
@@ -60,7 +74,20 @@ services:
       - clickhouse_data:/var/lib/clickhouse
       - ./database/clickhouse/config/user.xml:/etc/clickhouse-server/users.d/default-user.xml:ro
       - ./database/clickhouse/config/custom_config.xml:/etc/clickhouse-server/config.d/custom_config.xml:ro
+  
+  postgres:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    restart: "always"
+    environment:
+      - POSTGRES_DB=box_score_arc
+      - POSTGRES_USER=box_score_arc_user
+      - POSTGRES_PASSWORD=box_score_arc_password
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
 
 volumes:
   clickhouse_data:
     name: clickhouse_data 
+  postgresql_data:
