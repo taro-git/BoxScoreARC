@@ -14,13 +14,13 @@ ALLOWED_KEYS: SimpleNamespace = SimpleNamespace(
 
 class BoxScoreDataNbaApiService:
     
-    def __init__(self):
-        self.box_score_data = BoxScoreData()
+    def __init__(self, game_id: str):
+        self.game_id = game_id
+        self.box_score_data = BoxScoreData(game_id=game_id)
     
-    def get_box_score_data(self, game_id: str) -> BoxScoreData:
-        play_by_play_v2 = playbyplayv2.PlayByPlayV2(game_id=game_id)
+    def get_box_score_data(self) -> BoxScoreData:
+        play_by_play_v2 = playbyplayv2.PlayByPlayV2(game_id=self.game_id)
         play_by_play = play_by_play_v2.play_by_play.get_data_frame()
-        # あとは playbyplay を BoxScoreData に変換するだけ
         # EVENTMSGTYPE でプレーが区別できる
         # 個人ではなく、チーム単位の事象は PLAYER_ID が TEAM_ID になる
         # 1: フィールドゴール成功 SCORE がNONE じゃなくなる "54 - 54" の形式、PLAYER1_ID が得点、PLAYER2_ID がアシスト（なければPLAYER2_ID は 0）
@@ -43,17 +43,16 @@ class BoxScoreDataNbaApiService:
         # 18: チャレンジによるインスタントリプレイ 同じゲームクロックでタイムアウトのチームが申請
         last_score = '0 - 0'
         last_elapsed_seconds = 0
-        # MYTODO min と +/- が正しくない⇒クウォーター間の交代が playbyplay に反映されないことが原因。boxscoretraditionalv3 の end_range, start_rangeで対応可能　スタメンもこれで対応した方がよさげ
-        box_score_summary = BoxScoreSummaryNbaApiService().get_box_score_summary(game_id)
+        box_score_summary = BoxScoreSummaryNbaApiService().get_box_score_summary(self.game_id)
         on_court_away_player_id = [box_score_summary.away.players[i].player_id for i in range(5)]
         on_court_home_player_id = [box_score_summary.home.players[i].player_id for i in range(5)]
         change_period_flag = False
+
         for one_play in play_by_play.itertuples():
             elapsed_seconds = self._get_elapsed_seconds(one_play.PERIOD, one_play.PCTIMESTRING)
             elapsed_seconds_diff = elapsed_seconds - last_elapsed_seconds
             if change_period_flag and elapsed_seconds_diff != 0:
                 on_court_player_id = self._update_on_court_player_id(
-                    game_id=game_id,
                     on_court_away_player_id=on_court_away_player_id,
                     on_court_home_player_id=on_court_home_player_id,
                     away_team_id=box_score_summary.away.team_id,
@@ -240,7 +239,6 @@ class BoxScoreDataNbaApiService:
 
     def _update_on_court_player_id(
         self,
-        game_id: str,
         on_court_away_player_id: list[int],
         on_court_home_player_id: list[int],
         away_team_id: int,
@@ -248,16 +246,12 @@ class BoxScoreDataNbaApiService:
         elapsed_seconds_untill_first_play: int,
         period: int,
     ) -> dict:
-        pd.set_option('display.max_rows', None)        # 行をすべて表示
-        pd.set_option('display.max_columns', None)     # 列をすべて表示
-        pd.set_option('display.width', None)           # 横幅による折返しを防止
-        pd.set_option('display.max_colwidth', None)    # 各列の内容の最大文字数
         if period <= 4:
             period_start_seconds = 12 * 60 * (period - 1)
         else:
             period_start_seconds = 4 * 12 * 60 + 5 * 60 * (period - 5)
         box_score_traditional_v3 = boxscoretraditionalv3.BoxScoreTraditionalV3(
-            game_id=game_id,
+            game_id=self.game_id,
             start_period="0",
             start_range=str(period_start_seconds * 10),
             end_period="0",

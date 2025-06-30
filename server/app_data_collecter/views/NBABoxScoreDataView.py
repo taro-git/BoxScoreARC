@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-from ..services.nba_api.BoxScoreDataNbaApiService import BoxScoreDataNbaApiService
+from ..services.common.GetBoxScoreDataService import GetBoxScoreDataService
 from ..serializers.nba_api.BoxScoreDataSerializer import BoxScoreDataSerializer
 
 
@@ -13,7 +13,7 @@ class NBABoxScoreDataView(APIView):
             if not game_id:
                 return Response({'error': 'gameId parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-            box_score_data = BoxScoreDataNbaApiService().get_box_score_data(game_id)
+            box_score_data = GetBoxScoreDataService(game_id=game_id).get_box_score_data()
             return Response(BoxScoreDataSerializer(box_score_data).data, status=status.HTTP_200_OK)
 
         except Exception as e:
