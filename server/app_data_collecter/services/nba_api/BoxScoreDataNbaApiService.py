@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from nba_api.stats.endpoints import playbyplayv2, boxscoretraditionalv3
 
 from ...models.nba_api.BoxScoreDataModel import BoxScoreData
-from .BoxScoreSummaryNbaApiService import BoxScoreSummaryNbaApiService
+from ..common.GetBoxScoreSummaryService import GetBoxScoreSummaryService
 
 ALLOWED_KEYS: SimpleNamespace = SimpleNamespace(
     MIN=0, PTS=1, REB=2, AST=3, STL=4, BLK=5, FG=6, FGA=7, FG_PCT=8,
@@ -14,9 +14,10 @@ ALLOWED_KEYS: SimpleNamespace = SimpleNamespace(
 
 class BoxScoreDataNbaApiService:
     
-    def __init__(self, game_id: str):
+    def __init__(self, game_id: str, getBoxScoreSummaryService=None):
         self.game_id = game_id
         self.box_score_data = BoxScoreData(game_id=game_id)
+        self.getBoxScoreSummaryService = getBoxScoreSummaryService or GetBoxScoreSummaryService(game_id=game_id)
     
     def get_box_score_data(self) -> BoxScoreData:
         play_by_play_v2 = playbyplayv2.PlayByPlayV2(game_id=self.game_id)
@@ -43,7 +44,7 @@ class BoxScoreDataNbaApiService:
         # 18: チャレンジによるインスタントリプレイ 同じゲームクロックでタイムアウトのチームが申請
         last_score = '0 - 0'
         last_elapsed_seconds = 0
-        box_score_summary = BoxScoreSummaryNbaApiService().get_box_score_summary(self.game_id)
+        box_score_summary = self.getBoxScoreSummaryService.get_box_score_summary()
         on_court_away_player_id = [box_score_summary.away.players[i].player_id for i in range(5)]
         on_court_home_player_id = [box_score_summary.home.players[i].player_id for i in range(5)]
         change_period_flag = False

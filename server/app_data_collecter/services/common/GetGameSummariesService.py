@@ -11,7 +11,7 @@ from ..nba_api.GameSummariesNbaApiService import GameSummariesNbaApiService
 
 class GetGameSummariesService:
 
-    def __init__(self, timeAdjustService=None, gameSummariesNbaApiService=None, gameSummariesClickhouseService=None, seasonRangeClickhouseService=None):
+    def __init__(self, timeAdjustService=None, gameSummariesNbaApiService=None):
         self.timeAdjustService = timeAdjustService or TimeAdjustService()
         self.gameSummariesNbaApiService = gameSummariesNbaApiService or GameSummariesNbaApiService()
 

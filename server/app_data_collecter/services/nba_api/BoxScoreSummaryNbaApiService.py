@@ -5,15 +5,15 @@ from nba_api.stats.endpoints import boxscoresummaryv2, boxscoreplayertrackv3
 from ...models.nba_api.BoxScoreSummaryModel import Player, TeamSummary, BoxScoreSummary
 
 class BoxScoreSummaryNbaApiService:
-    def __init__(self):
-        pass
+    def __init__(self, game_id: str):
+        self.game_id = game_id
     
-    def get_box_score_summary(self, game_id: str) -> BoxScoreSummary:
-        box_score_summary_v2 = boxscoresummaryv2.BoxScoreSummaryV2(game_id=game_id)
+    def get_box_score_summary(self) -> BoxScoreSummary:
+        box_score_summary_v2 = boxscoresummaryv2.BoxScoreSummaryV2(game_id=self.game_id)
         inactive_players = box_score_summary_v2.inactive_players.get_data_frame()
         game_summary = box_score_summary_v2.game_summary.get_data_frame()
         line_score = box_score_summary_v2.line_score.get_data_frame()
-        box_score_player_track_v3 = boxscoreplayertrackv3.BoxScorePlayerTrackV3(game_id=game_id)
+        box_score_player_track_v3 = boxscoreplayertrackv3.BoxScorePlayerTrackV3(game_id=self.game_id)
         player_stats = box_score_player_track_v3.player_stats.get_data_frame()
 
         home_team_id = game_summary["HOME_TEAM_ID"].iloc[0]
@@ -84,6 +84,7 @@ class BoxScoreSummaryNbaApiService:
             players=away_players
         )
         return BoxScoreSummary(
+            game_id=self.game_id,
             game_date_jst=game_date_jst,
             home= home_team,
             away=away_team
