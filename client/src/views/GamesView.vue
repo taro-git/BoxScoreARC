@@ -30,7 +30,7 @@
                     <div v-if="gameSummariesSets.gameSummaryMap.value[dayOffset].length === 0" class="no-game">no game
                     </div>
                     <GameCard v-for="(game, j) in gameSummariesSets.gameSummaryMap.value[dayOffset]" :key="j"
-                        :game-summary="game" :game-date="selectedDateISOString" :score-display="true"
+                        :game-summary="game" :game-date="selectedDateISOString" :score-display="scoreDisplay"
                         :full-view="true" />
                 </template>
             </div>
@@ -51,13 +51,17 @@ import { getGameSummaries, isGameSummary } from '@/services/getGameSummariesServ
 import { swipeService } from '@/services/swipeService'
 import { CacheService } from '@/services/cacheService'
 
+import { gameDateStore } from '@/store/gameDate'
+import { settingsStore } from '@/store/settings'
+
 import type { GameSummary } from '@/types/GameSummary'
 import { GameSummariesSets } from '@/types/GameSummariesSets'
 
-const sessionStorageGameDate = sessionStorage.getItem('gameDate')
-sessionStorage.removeItem('gameDate')
-const selectedDate = ref(sessionStorageGameDate ? new Date(sessionStorageGameDate) : new Date())
+const selectedDate = ref(gameDateStore().gameDate)
 const selectedDateISOString = computed(() => selectedDate.value.toISOString().slice(0, 10))
+
+const scoreDisplay = settingsStore().scoreDisplay
+
 const showPopup = ref(false)
 const numberOfPreviousDays = 1
 const numberOfFutureDays = 1
@@ -65,6 +69,7 @@ const gameSummariesSets = new GameSummariesSets(numberOfPreviousDays, numberOfFu
 
 const updateDate = (date: Date) => {
     selectedDate.value = date
+    gameDateStore().gameDate = date
 }
 
 const selectDateOnMonthlyCalendar = (date: Date) => {
@@ -126,11 +131,11 @@ const updategameSummariesSets = async () => {
 watch(selectedDate, updategameSummariesSets, { immediate: true })
 
 const slideToNextDay = () => {
-    selectedDate.value = new Date(selectedDate.value.getTime() + 86400000)
+    updateDate(new Date(selectedDate.value.getTime() + 86400000))
 }
 
 const slideToPreviousDay = () => {
-    selectedDate.value = new Date(selectedDate.value.getTime() - 86400000)
+    updateDate(new Date(selectedDate.value.getTime() - 86400000))
 }
 
 const {

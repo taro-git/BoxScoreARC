@@ -2,7 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import GamesView from '@/views/GamesView.vue'
 import GameView from '@/views/GameView.vue'
 import AnalysysView from '@/views/AnalysysView.vue'
-import DataView from '@/views/DataView.vue'
+import SettingsView from '@/views/SettingsView.vue'
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -22,9 +22,9 @@ const routes: Array<RouteRecordRaw> = [
         component: AnalysysView
     },
     {
-        path: '/data',
-        name: 'data',
-        component: DataView
+        path: '/settings',
+        name: 'settings',
+        component: SettingsView
     }
 ]
 

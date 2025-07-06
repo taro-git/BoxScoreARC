@@ -42,8 +42,6 @@ const props = defineProps<{
     gameDate: string
 }>()
 
-sessionStorage.setItem('gameDate', props.gameDate)
-
 const activeTab = ref<'teamstats' | 'boxscore' | 'headtoheadrecord'>('boxscore')
 
 const currentTabComponent = computed(() => {
