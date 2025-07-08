@@ -259,7 +259,46 @@ class BoxScoreDataNbaApiService:
             end_range=str((period_start_seconds + elapsed_seconds_untill_first_play) * 10),
             range_type="2",
         )
-        player_stats = box_score_traditional_v3.player_stats.get_data_frame()
+        try:
+            player_stats = box_score_traditional_v3.player_stats.get_data_frame()
+        except Exception as e:
+            # 稀に boxscoretraditionalv3 のレスポンスデータが不正でget_data_frame() できないことがある 
+            # nba_api 自体か裏で叩いている nba 側の API でのバグのため、暫定で以下の処理で対応
+            print("get_data_frame() でエラー:", e)
+
+            headers = box_score_traditional_v3.player_stats.data["headers"]
+            data = box_score_traditional_v3.player_stats.data["data"]
+
+            expected_col_count = len(headers)
+            trimmed_data = []
+
+            for row in data:
+                row = list(row)
+
+                diff = len(row) - expected_col_count
+                if diff <= 0:
+                    # 行が短いか期待列数と同じならそのまま
+                    trimmed_data.append(row)
+                    continue
+
+                # 差分分だけ None を削除（左から順に）
+                none_indices = [i for i, v in enumerate(row) if v is None]
+                to_remove = min(diff, len(none_indices))
+
+                # None を左から to_remove 個削除
+                for idx in sorted(none_indices[:to_remove], reverse=True):
+                    del row[idx]
+
+                diff -= to_remove
+
+                # まだ差分が残っていれば、末尾から切り詰める
+                if diff > 0:
+                    row = row[:-diff]
+
+                trimmed_data.append(row)
+
+            # headers はそのまま使う（length = expected_col_count）
+            player_stats = pd.DataFrame(trimmed_data, columns=headers)
         away_player_stats = player_stats[
             (player_stats["teamId"] == away_team_id) &
             (player_stats["minutes"].apply(self._convert_clock_to_seconds) >= elapsed_seconds_untill_first_play)

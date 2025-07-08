@@ -222,7 +222,7 @@ boxScoreSummarycacheService.getOrFetch(Number(props.gameId), () => getBoxScoreSu
 
 const boxScoreRawDatacacheService = new CacheService<BoxScoreRawData>({
     ttlSeconds: 900,
-    maxItems: 10,
+    maxItems: 5,
     cacheFilter: (_, data: unknown): data is BoxScoreRawData => isBoxScoreRawData(data),
 })
 const boxScoreRawData = ref<BoxScoreRawData>({})
