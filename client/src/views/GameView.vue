@@ -54,6 +54,8 @@ const props = defineProps<{
 }>()
 
 const gameSummary = ref(gameSummaryStore())
+gameSummary.value.away_score = 0
+gameSummary.value.home_score = 0
 
 const activeTab = ref<'teamstats' | 'boxscore' | 'headtoheadrecord'>('boxscore')
 
