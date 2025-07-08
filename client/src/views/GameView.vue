@@ -11,9 +11,17 @@
                 :class="['tab', activeTab === 'headtoheadrecord' ? 'selected' : '']">Head to Head Record</div>
         </div>
         <div v-if="activeTab === 'teamstats' || activeTab === 'boxscore'" class="game-clock">
-            <label for="game-time">Game Clock Range</label>
-            <vue-slider class="game-clock-slider" v-model="gameClockRange" :max="maxSeconds" :tooltip="'always'"
-                :tooltip-formatter="formatReminTime" :height="10" />
+            <select v-model="selectedQuarterRange">
+                <option v-for="quarterRangeLabel in quarterRangeLabels" :key="quarterRangeLabel.value"
+                    :value="quarterRangeLabel.value">
+                    {{ quarterRangeLabel.label }}
+                </option>
+            </select>
+            <label for="game-time">
+                {{ formatReminTime(gameClockRange[0]) }} ~ {{ formatReminTime(gameClockRange[1]) }}
+            </label>
+            <vue-slider class="game-clock-slider" v-model="gameClockRange" :min="minSeconds" :max="maxSeconds"
+                :tooltip="'none'" :height="10" />
         </div>
         <component v-if="!isLoading" :is="currentTabComponent" v-bind="currentTabProps" />
     </div>
@@ -33,14 +41,19 @@ import GameCard from '@/components/GameCard.vue'
 import { CacheService } from '@/services/cacheService'
 import { getBoxScoreSummary, isBoxScoreSummary, getBoxScoreRawData, isBoxScoreRawData } from '@/services/getBoxScoreService'
 
+import { gameSummaryStore } from '@/store/gameSummary'
+import { settingsStore } from '@/store/settings'
+
 import { BoxScoreSummary } from '@/types/BoxScoreSummary'
 import { BOX_SCORE_COLUMNS, BoxScoreData, BoxScoreRawData } from '@/types/BoxScore'
-import { GameSummary } from '@/types/GameSummary'
+import { quarterRangeVariations, quarterRangeLabels } from '@/types/quarterRangeVariations'
 
 const props = defineProps<{
     gameId: string
     gameDate: string
 }>()
+
+const gameSummary = ref(gameSummaryStore())
 
 const activeTab = ref<'teamstats' | 'boxscore' | 'headtoheadrecord'>('boxscore')
 
@@ -59,14 +72,32 @@ const currentTabProps = computed(() => {
         default: return {
             boxScoreSummary: boxScoreSummary.value,
             boxScoreData: boxScoreData,
-            maxSeconds: maxSeconds,
-            gameClockRange: gameClockRange.value,
         }
     }
 })
 
-const maxSeconds = (12 * 4 + 5 * 2) * 60
-const gameClockRange = ref([0, 0])
+const selectedQuarterRange = ref<quarterRangeVariations>(settingsStore().defaultQuarterRangeType)
+const endQuater = gameSummary.value.live_period
+const quaterRange: Record<quarterRangeVariations, Record<'maxQuater' | 'minQuater', number>> = {
+    Q1: { maxQuater: 1, minQuater: 1 },
+    Q2: { maxQuater: 2, minQuater: 2 },
+    firstHalf: { maxQuater: 2, minQuater: 1 },
+    Q3: { maxQuater: 3, minQuater: 3 },
+    Q4: { maxQuater: 4, minQuater: 4 },
+    secondHalf: { maxQuater: 4, minQuater: 3 },
+    fourQuarters: { maxQuater: 4, minQuater: 1 },
+    all: { maxQuater: endQuater, minQuater: 1 },
+    OT: { maxQuater: endQuater <= 4 ? 5 : endQuater, minQuater: 5 }
+}
+const maxSeconds = computed(() => {
+    const maxQuarter = quaterRange[selectedQuarterRange.value].maxQuater
+    return endQuater == 4 ? 12 * 4 * 60 : maxQuarter <= 4 ? 12 * maxQuarter * 60 : 12 * 4 * 60 + 5 * (maxQuarter - 4) * 60
+})
+const minSeconds = computed(() => {
+    const minQuarter = quaterRange[selectedQuarterRange.value].minQuater
+    return minQuarter <= 4 ? 12 * (minQuarter - 1) * 60 : 12 * 4 * 60 + 5 * (minQuarter - 5) * 60
+})
+const gameClockRange = ref([minSeconds.value, minSeconds.value])
 watch(gameClockRange, ([start_range, end_range]) => {
     updateBoxScoreData(start_range, end_range)
     gameSummary.value.away_score = boxScoreSummary.value.away.players.filter(player => !player.is_inactive).map(player => player.player_id)
@@ -74,19 +105,29 @@ watch(gameClockRange, ([start_range, end_range]) => {
     gameSummary.value.home_score = boxScoreSummary.value.home.players.filter(player => !player.is_inactive).map(player => player.player_id)
         .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
 })
+watch(selectedQuarterRange, () => {
+    const min = minSeconds.value
+    const max = maxSeconds.value
+    const [start, end] = gameClockRange.value
+
+    const clampedStart = Math.max(min, Math.min(start, max))
+    const clampedEnd = Math.max(min, Math.min(end, max))
+
+    gameClockRange.value = [clampedStart, clampedEnd]
+})
 
 const formatReminTime = (seconds: number) => {
     let nth = ''
     let reminMinutes = 12
     let reminSeconds = 0
     let reminTime = ''
-    if (seconds <= 48 * 60) {
+    if (seconds < 48 * 60) {
         let quarter = 0
         if (seconds % (12 * 60) !== 0) {
             quarter = Math.floor((seconds) / (12 * 60)) + 1
         } else {
-            if (seconds === 0) {
-                quarter = 1
+            if (seconds === minSeconds.value) {
+                quarter = quaterRange[selectedQuarterRange.value].minQuater
             } else {
                 quarter = Math.floor((seconds) / (12 * 60))
             }
@@ -108,6 +149,16 @@ const formatReminTime = (seconds: number) => {
         reminSeconds = quarter * 12 * 60 - seconds
         reminMinutes = Math.floor(reminSeconds / 60)
         reminSeconds = reminSeconds % 60
+    } else if (seconds === 48 * 60) {
+        if (seconds === minSeconds.value) {
+            nth = 'OT1'
+            reminMinutes = 5
+            reminSeconds = 0
+        } else {
+            nth = '4th Q.'
+            reminMinutes = 0
+            reminSeconds = 0
+        }
     } else {
         const otSeconds = seconds - 48 * 60
         let ot = 0
@@ -156,26 +207,12 @@ const boxScoreSummary = ref<BoxScoreSummary>({
         players: []
     }
 })
-const gameSummary = ref<GameSummary>({
-    game_id: '',
-    home_logo: '',
-    home_score: 0,
-    away_logo: '',
-    away_score: 0,
-    status_text: ''
-})
+
 const boxScoreData = ref<BoxScoreData>({})
 boxScoreSummarycacheService.getOrFetch(Number(props.gameId), () => getBoxScoreSummary(props.gameId))
     .then((response) => {
         boxScoreSummary.value = response
-        gameSummary.value = {
-            game_id: props.gameId,
-            home_logo: response.home.logo,
-            home_score: 0,
-            away_logo: response.away.logo,
-            away_score: 0,
-            status_text: response.game_date_jst.toISOString().slice(0, 10),
-        }
+        gameSummary.value.status_text = response.game_date_jst.toISOString().slice(0, 10)
         const players = [...response.home.players, ...response.away.players]
         players.forEach(player => {
             if (!player.is_inactive) boxScoreData.value[player.player_id] = new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)
@@ -195,54 +232,64 @@ boxScoreRawDatacacheService.getOrFetch(Number(props.gameId), () => getBoxScoreRa
     })
 
 const updateBoxScoreData = (start_range: number, end_range: number) => {
+    if (start_range > end_range) {
+        throw new Error("invalid game clock range, start > end")
+    }
     for (const [player_id_str, box_score_raw] of Object.entries(boxScoreRawData.value)) {
         const player_id = parseInt(player_id_str, 10)
         let start_box_score: number[] | null = null
         let end_box_score: number[] | null = null
         for (let i = 0; i < box_score_raw.length; i++) {
             const [time, box_score] = box_score_raw[i]
-            if (!start_box_score && time > start_range) {
-                if (i == 0) {
-                    start_box_score = new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)
-                } else {
-                    start_box_score = box_score_raw[i - 1][1]
+            if (time >= start_range) {
+                if (!start_box_score) {
+                    if (i == 0) {
+                        start_box_score = new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)
+                    } else {
+                        start_box_score = box_score_raw[i - 1][1]
+                    }
                 }
-            }
-            if (time < end_range) {
-                end_box_score = box_score
-            } else {
-                break
+                if (time <= end_range) {
+                    if (i == 0) {
+                        end_box_score = new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)
+                    } else {
+                        end_box_score = box_score
+                    }
+                } else {
+                    break
+                }
             }
         }
         if (!start_box_score || !end_box_score) {
-            continue
+            boxScoreData.value[player_id] = convertPlayTimeToMin(calcShootingPercentage(new Array(BOX_SCORE_COLUMNS.length - 1).fill(0)))
+        } else {
+            boxScoreData.value[player_id] = convertPlayTimeToMin(calcShootingPercentage(end_box_score.map((v, i) => v - start_box_score[i])))
         }
-        boxScoreData.value[player_id] = convertPlayTimeToMin(calcShootingPercentage(end_box_score.map((v, i) => v - start_box_score[i])))
     }
 }
 
 const calcShootingPercentage = (boxScoraRow: number[]) => {
     let result = boxScoraRow
     if (result.length < 15) {
-        throw new Error("invalid box score data row");
+        throw new Error("invalid box score data row")
     }
 
     if (boxScoraRow[7] !== 0) {
-        result[8] = Math.round((boxScoraRow[6] / boxScoraRow[7]) * 100 * 10) / 10;
+        result[8] = Math.round((boxScoraRow[6] / boxScoraRow[7]) * 100 * 10) / 10
     } else {
-        result[8] = 0;
+        result[8] = 0
     }
 
     if (boxScoraRow[10] !== 0) {
-        result[11] = Math.round((boxScoraRow[9] / boxScoraRow[10]) * 100 * 10) / 10;
+        result[11] = Math.round((boxScoraRow[9] / boxScoraRow[10]) * 100 * 10) / 10
     } else {
-        result[11] = 0;
+        result[11] = 0
     }
 
     if (boxScoraRow[13] !== 0) {
-        result[14] = Math.round((boxScoraRow[12] / boxScoraRow[13]) * 100 * 10) / 10;
+        result[14] = Math.round((boxScoraRow[12] / boxScoraRow[13]) * 100 * 10) / 10
     } else {
-        result[14] = 0;
+        result[14] = 0
     }
     return result
 }

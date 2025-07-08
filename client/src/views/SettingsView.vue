@@ -12,15 +12,32 @@
                     <ToggleSwitch v-model="settings.scoreDisplay" :size="60" />
                 </td>
             </tr>
+            <tr>
+                <th>
+                    default range of quarter
+                </th>
+                <td>
+                    <select v-model="settings.defaultQuarterRangeType">
+                        <option v-for="quarterRangeLabel in quarterRangeLabels" :key="quarterRangeLabel.value"
+                            :value="quarterRangeLabel.value">
+                            {{ quarterRangeLabel.label }}
+                        </option>
+                    </select>
+                </td>
+            </tr>
         </table>
     </div>
 </template>
 
 <script setup lang="ts">
 import ToggleSwitch from '@/components/ToggleSwitch.vue'
+
 import { settingsStore } from '@/store/settings'
 
+import { quarterRangeLabels } from '@/types/quarterRangeVariations'
+
 const settings = settingsStore()
+
 
 
 </script>

@@ -1,5 +1,6 @@
 <template>
-    <router-link :to="{ name: 'game', params: { gameDate: gameDate, gameId: gameSummary.game_id } }" class="card">
+    <router-link :to="{ name: 'game', params: { gameDate: gameDate, gameId: gameSummary.game_id } }" class="card"
+        @click="selectGame">
         <div class="status">{{ gameSummary.status_text }}</div>
         <div v-if="fullView" class="category">{{ gameSummary.game_category }}</div>
         <div class="teams">
@@ -21,14 +22,23 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
 
+import { gameSummaryStore } from '@/store/gameSummary';
+
 import type { GameSummary } from '@/types/GameSummary';
 
-defineProps<{
+const props = defineProps<{
     gameSummary: GameSummary
     gameDate: string
     scoreDisplay: boolean
     fullView: boolean
 }>()
+
+const selectedGameSummary = gameSummaryStore()
+
+const selectGame = () => {
+    Object.assign(selectedGameSummary, props.gameSummary)
+}
+
 </script>
 
 <style scoped>
