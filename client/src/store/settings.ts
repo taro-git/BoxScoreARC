@@ -1,4 +1,4 @@
-import { quarterRangeVariations } from '@/types/quarterRangeVariations'
+import { quarterRangeVariations } from '@/types/QuarterRangeVariations'
 import { defineStore } from 'pinia'
 
 interface SettingsState {

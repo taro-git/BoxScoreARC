@@ -46,7 +46,7 @@ import { settingsStore } from '@/store/settings'
 
 import { BoxScoreSummary } from '@/types/BoxScoreSummary'
 import { BOX_SCORE_COLUMNS, BoxScoreData, BoxScoreRawData } from '@/types/BoxScore'
-import { quarterRangeVariations, quarterRangeLabels } from '@/types/quarterRangeVariations'
+import { quarterRangeVariations, quarterRangeLabels } from '@/types/QuarterRangeVariations'
 
 const props = defineProps<{
     gameId: string

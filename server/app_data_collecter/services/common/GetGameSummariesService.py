@@ -33,7 +33,7 @@ class GetGameSummariesService:
             next_season_range = SeasonRangeForPostgres.objects.filter(season=next_season_str).first()
             if prev_season_range.end_date < date_jst.date():
                 if next_season_range == None:
-                    self._update_postgres_game_summaries_and_season_range(prev_season_str, today_jst)
+                    self._update_postgres_game_summaries_and_season_range(next_season_str, today_jst)
                     next_season_range = SeasonRangeForPostgres.objects.filter(season=next_season_str).first()
                 if next_season_range == None and prev_season_range.update_game_summaries_date < date_jst.date():
                     self._update_postgres_game_summaries_and_season_range(prev_season_str, today_jst)

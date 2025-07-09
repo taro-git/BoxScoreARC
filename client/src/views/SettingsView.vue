@@ -34,7 +34,7 @@ import ToggleSwitch from '@/components/ToggleSwitch.vue'
 
 import { settingsStore } from '@/store/settings'
 
-import { quarterRangeLabels } from '@/types/quarterRangeVariations'
+import { quarterRangeLabels } from '@/types/QuarterRangeVariations'
 
 const settings = settingsStore()
 
