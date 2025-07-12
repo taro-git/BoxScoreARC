@@ -10,7 +10,7 @@ services:
       - ./client:/app
       - /app/node_modules
     ports:
-      - "1024:8080"
+      - "8080:8080"
     restart: "always"
     environment:
       - TZ=Asia/Tokyo
@@ -20,7 +20,7 @@ services:
       context: ./client
       target: prod
     ports:
-      - "1024:80"
+      - "80:80"
     restart: "always"
     environment:
       - TZ=Asia/Tokyo
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./server:/app
     ports:
-      - "1026:8000"
+      - "8000:8000"
     restart: "always"
     environment:
       - PYTHONPATH=/app
@@ -50,7 +50,7 @@ services:
       context: ./server
       target: prod
     ports:
-      - "1026:8000"
+      - "8000:8000"
     restart: "always"
     environment:
       - PYTHONPATH=/app
