@@ -8,26 +8,31 @@ backend server: Django (python)
 database: PostgreSQL
 
 # Build
+### preparation
+※ it's for windows, so please read according to your environment.  
+1. If you need, put certificate in `traefik/certs`. default is self-signed certificate configured with `traefik/certs/openssl.cnf`.
+    * Put SSL/TLS certificate issued by CA
+    * Put your own self-signed certificate
+        1. Edit `traefik/certs/openssl.cnf`
+        1. Run following commands in Docker environment
+            ```sh
+            docker run --rm `
+              -v "${PWD}/traefik/certs:/etc/traefik/certs" `
+              alpine:latest `
+              sh -c "apk add --no-cache openssl && \
+                     openssl req -x509 -nodes -days 365 \
+                       -newkey rsa:2048 \
+                       -keyout /etc/traefik/certs/self.key \
+                       -out /etc/traefik/certs/self.crt \
+                       -config /etc/traefik/certs/openssl.cnf"
+            ```
 ### for production
-1. create env file `client/env.development` and add following text in the file.
-   ```
-   VUE_APP_API_BASE_URL=http://<<your host name>>:1026/api
-   ```
 1. Run following commands in Docker environment  
     ```sh
     docker compose --profile prod up --build -d
     ```
 ### for development
-1. if build in linux envivonment, you need to run following command before docker compose up.  
-    ```sh
-    chmod +x ./server/entrypoint.sh
-    ```
-1. Run following commands in Docker environment  
-    ```sh
-    docker compose --profile dev up --build -d
-    ```
-
-if edit source code, recomend to do following step (it's for vscode in windows, so please read according to your environment. ).  
+※ it's for vscode in windows, so please read according to your environment.  
 1. Open folder BoxScoreArc in vscode
 1. Open new terminal in vscode
 1. Run following commands to install packages for client 
@@ -49,3 +54,7 @@ if edit source code, recomend to do following step (it's for vscode in windows, 
     1. `Ctrl+Shift+P` and click `Python: Select Interpreter`
     1. select `Python <<version>> ('env': venv) .\server\env\Scripts\python.exe`
     1. restart vscode
+1. Run following commands in Docker environment  
+    ```sh
+    docker compose --profile dev up --build -d
+    ```

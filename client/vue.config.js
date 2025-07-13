@@ -1,9 +1,15 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
   transpileDependencies: true,
+  publicPath: '/view/',
   devServer: {
     host: '0.0.0.0',         // どこからのアクセスでも受け入れる
-    allowedHosts: 'all'      // ホストチェックを無効化（安全な方法）
+    allowedHosts: 'all',     // ホストチェックを無効化（安全な方法）
+    historyApiFallback: {
+        rewrites: [
+            {from: /^\/view/, to: '/view/index.html'},
+        ]
+    }
   },
   configureWebpack: {
     watchOptions :{
