@@ -10,5 +10,11 @@ module.exports = defineConfig({
       aggregateTimeout: 300,
       poll: 1000
     }
+  },
+  chainWebpack: config => {
+    config.plugin('html').tap(args => {
+        args[0].title = 'Box Score ARC'
+        return args
+    })
   }
 })
