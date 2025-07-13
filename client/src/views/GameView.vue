@@ -93,7 +93,7 @@ const quaterRange: Record<quarterRangeVariations, Record<'maxQuater' | 'minQuate
 }
 const maxSeconds = computed(() => {
     const maxQuarter = quaterRange[selectedQuarterRange.value].maxQuater
-    return endQuater == 4 ? 12 * 4 * 60 : maxQuarter <= 4 ? 12 * maxQuarter * 60 : 12 * 4 * 60 + 5 * (maxQuarter - 4) * 60
+    return maxQuarter <= 4 ? 12 * maxQuarter * 60 : endQuater == 4 ? 12 * 4 * 60 : 12 * 4 * 60 + 5 * (maxQuarter - 4) * 60
 })
 const minSeconds = computed(() => {
     const minQuarter = quaterRange[selectedQuarterRange.value].minQuater
