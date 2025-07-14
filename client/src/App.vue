@@ -5,7 +5,7 @@
         <footer class="footer">
             <router-link to="/" class="nav">🏠<br>Home</router-link>
             <router-link to="/games" class="nav">🏀<br>Games</router-link>
-            <router-link to="/analysys" class="nav">📊<br>Analysys</router-link>
+            <router-link to="/analysis" class="nav">📊<br>Analysis</router-link>
             <router-link to="/settings" class="nav">⚙️<br>Settings</router-link>
         </footer>
     </div>

@@ -80,6 +80,8 @@ REST_FRAMEWORK = {
     ]
 }
 
+# Security
+
 CORS_ALLOW_ALL_ORIGINS = 'runserver' in sys.argv
 ALLOWED_HOSTS = ['*']
 

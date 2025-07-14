@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import GamesView from '@/views/GamesView.vue'
 import GameView from '@/views/GameView.vue'
-import AnalysysView from '@/views/AnalysysView.vue'
+import AnalysisView from '@/views/AnalysisView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 
 const routes: Array<RouteRecordRaw> = [
@@ -17,9 +17,9 @@ const routes: Array<RouteRecordRaw> = [
         props: true
     },
     {
-        path: '/analysys',
-        name: 'analysys',
-        component: AnalysysView
+        path: '/analysis',
+        name: 'analysis',
+        component: AnalysisView
     },
     {
         path: '/settings',

@@ -1,6 +1,8 @@
 from datetime import date
 from typing import Literal
 from dataclasses import dataclass, field
+import requests
+import base64
 
 from ..postgres.GameSummaryForPostgresModel import GameSummaryForPostgres
 
@@ -52,6 +54,13 @@ GAME_CATEGORY = {
     '6': 'Emirates NBA Cup'
 }
 
+def fetch_and_encode_svg(url: str) -> str:
+    response = requests.get(url)
+    response.raise_for_status()
+    svg_bytes = response.content
+    b64 = base64.b64encode(svg_bytes).decode('utf-8')
+    return f"data:image/svg+xml;base64,{b64}"
+
 @dataclass(kw_only=True)
 class GameSummary:
     game_id: str
@@ -70,8 +79,8 @@ class GameSummary:
     game_category: str = field(init=False)
 
     def __post_init__(self):
-        self.home_logo = TEAM_LOGO.get(self.home_team, '')
-        self.away_logo = TEAM_LOGO.get(self.away_team,'')
+        self.home_logo = fetch_and_encode_svg(TEAM_LOGO.get(self.home_team, ''))
+        self.away_logo = fetch_and_encode_svg(TEAM_LOGO.get(self.away_team,''))
         self.game_category = GAME_CATEGORY.get(self.game_id[2], 'Unknown')
 
     @classmethod
