@@ -1,15 +1,23 @@
 [req]
 distinguished_name = req_distinguished_name
-x509_extensions = v3_req
 prompt = no
 
 [req_distinguished_name]
-CN = localhost
+CN = myCerts
 
-[v3_req]
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical, CA:TRUE
+keyUsage = critical, keyCertSign, cRLSign
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = critical, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
-[alt_names]
+[ alt_names ]
 DNS.1 = localhost
 DNS.2 = desktop-t.tail535db5.ts.net
 DNS.3 = ubuntuservert01.tail535db5.ts.net
