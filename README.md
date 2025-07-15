@@ -20,11 +20,24 @@ database: PostgreSQL
               -v "${PWD}/traefik/certs:/etc/traefik/certs" `
               alpine:latest `
               sh -c "apk add --no-cache openssl && \
-                     openssl req -x509 -nodes -days 365 \
-                       -newkey rsa:2048 \
-                       -keyout /etc/traefik/certs/self.key \
-                       -out /etc/traefik/certs/self.crt \
-                       -config /etc/traefik/certs/openssl.cnf"
+                openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+                  -subj '/CN=My Custom Root CA' \
+                  -keyout /etc/traefik/certs/rootCA.key \
+                  -out /etc/traefik/certs/rootCA.crt \
+                  -extensions v3_ca \
+                  -config /etc/traefik/certs/openssl.cnf && \
+                openssl req -new -newkey rsa:2048 -nodes \
+                  -subj '/CN=localhost' \
+                  -keyout /etc/traefik/certs/self.key \
+                  -out /etc/traefik/certs/self.csr \
+                  -config /etc/traefik/certs/openssl.cnf && \
+                openssl x509 -req -in /etc/traefik/certs/self.csr \
+                  -CA /etc/traefik/certs/rootCA.crt \
+                  -CAkey /etc/traefik/certs/rootCA.key \
+                  -CAcreateserial -days 825 \
+                  -out /etc/traefik/certs/self.crt \
+                  -extensions v3_req \
+                  -extfile /etc/traefik/certs/openssl.cnf"
             ```
 ### for production
 1. Run following commands in Docker environment  
