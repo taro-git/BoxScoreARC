@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 import requests
 import base64
 
+from django.core.cache  import cache
+
 from ..postgres.GameSummaryForPostgresModel import GameSummaryForPostgres
 
 TeamAbbreviation = Literal[
@@ -55,11 +57,18 @@ GAME_CATEGORY = {
 }
 
 def fetch_and_encode_svg(url: str) -> str:
-    response = requests.get(url)
-    response.raise_for_status()
-    svg_bytes = response.content
-    b64 = base64.b64encode(svg_bytes).decode('utf-8')
-    return f"data:image/svg+xml;base64,{b64}"
+    if url == '':
+        return ''
+    else:
+        cached_response = cache.get(url)
+        if cached_response:
+            return cached_response
+        response = requests.get(url)
+        response.raise_for_status()
+        svg_bytes = response.content
+        b64 = base64.b64encode(svg_bytes).decode('utf-8')
+        cache.set(url, f"data:image/svg+xml;base64,{b64}", timeout=60*10)
+        return f"data:image/svg+xml;base64,{b64}"
 
 @dataclass(kw_only=True)
 class GameSummary:

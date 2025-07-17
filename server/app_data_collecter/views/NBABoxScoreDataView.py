@@ -5,8 +5,6 @@ from rest_framework import status
 from ..services.common.GetBoxScoreDataService import GetBoxScoreDataService
 from ..serializers.nba_api.BoxScoreDataSerializer import BoxScoreDataSerializer
 
-# MYTODO: 4/14 cavs vs pacers がサーバー側でエラーになる。
-# 原因は不明。OverTimeだとなるのかも？
 class NBABoxScoreDataView(APIView):
     def get(self, request):
         try:
