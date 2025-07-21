@@ -1,34 +1,34 @@
 <template>
-    <router-link :to="{ name: 'game', params: { gameDate: gameDate, gameId: gameSummary.game_id } }" class="card"
-        @click="selectGame">
-        <div class="status">{{ gameSummary.status_text }}</div>
-        <div v-if="fullView" class="category">{{ gameSummary.game_category }}</div>
-        <div class="teams">
-            <div class="team">
-                <img :src="gameSummary.away_logo" width="50" />
-                <div v-if="fullView">{{ gameSummary.away_team }}</div>
+    <div :style="{ 'background-color': 'white' }">
+        <router-link :to="{ name: 'game', params: { gameId: gameSummary.game_id } }" class="card" @click="selectGame">
+            <div class="status">{{ gameSummary.status_text }}</div>
+            <div v-if="fullView" class="category">{{ gameSummary.game_category }}</div>
+            <div class="teams">
+                <div class="team">
+                    <img :src="gameSummary.away_logo" width="50" />
+                    <div v-if="fullView">{{ gameSummary.away_team }}</div>
+                </div>
+                <div v-if="scoreDisplay" class="score">{{ gameSummary.away_score ?? 0 }}</div>
+                <div class="vs">-</div>
+                <div v-if="scoreDisplay" class="score">{{ gameSummary.home_score ?? 0 }}</div>
+                <div class="team">
+                    <img :src="gameSummary.home_logo" width="50" />
+                    <div v-if="fullView">{{ gameSummary.home_team }}</div>
+                </div>
             </div>
-            <div v-if="scoreDisplay" class="score">{{ gameSummary.away_score ?? 0 }}</div>
-            <div class="vs">-</div>
-            <div v-if="scoreDisplay" class="score">{{ gameSummary.home_score ?? 0 }}</div>
-            <div class="team">
-                <img :src="gameSummary.home_logo" width="50" />
-                <div v-if="fullView">{{ gameSummary.home_team }}</div>
-            </div>
-        </div>
-    </router-link>
+        </router-link>
+    </div>
 </template>
 
 <script setup lang="ts">
 import { defineProps } from 'vue'
 
-import { gameSummaryStore } from '@/store/gameSummary';
+import { gameSummaryStore } from '../store/gameSummary';
 
-import type { GameSummary } from '@/types/GameSummary';
+import { GameSummary } from '../types/GameSummary';
 
 const props = defineProps<{
     gameSummary: GameSummary
-    gameDate: string
     scoreDisplay: boolean
     fullView: boolean
 }>()
@@ -46,11 +46,12 @@ const selectGame = () => {
     background: white;
     color: black;
     text-decoration: none;
-    margin: 7px 14px;
+    /* margin: 7px 14px; */
     border-radius: 12px;
     padding: 15px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
     /* 任意：少し立体感を出す */
+    /* width: 100%; */
 }
 
 .status {
@@ -68,6 +69,7 @@ const selectGame = () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0px 15px
 }
 
 .team {

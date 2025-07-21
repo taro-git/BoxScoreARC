@@ -3,7 +3,7 @@ FROM node:lts-alpine AS dev
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-CMD ["npm", "run", "serve"]
+CMD ["npm", "run", "dev"]
 
 
 # ビルド環境

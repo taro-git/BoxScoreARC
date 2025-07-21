@@ -1,87 +1,76 @@
 <template>
-    <div class="container">
-        <header class="header">
-            <div>
-                <button class="header-button" @click="goToToday">Today</button>
-            </div>
-            <div>Games</div>
-            <div>
-                <button class="header-button" @click="showPopup = true">📅</button>
-            </div>
-        </header>
+    <v-container class="d-flex flex-column h-100" fluid>
 
         <CalendarScroller :selected-date="selectedDate" @update-date="updateDate" />
 
-        <MonthlyCalendar v-if="showPopup" :selected-date="selectedDate" @select="selectDateOnMonthlyCalendar"
-            @close="showPopup = false" />
-
-        <div class="game-slider-container" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
-            <div class="game-page" v-for="dayOffset in gameSummariesSets.dayOffsetsList" :key="dayOffset" :style="{
-                transform: `translateX(${offsets[dayOffset]}px)`,
-                transition: isSliding ? `transform ${slideAnimationDurationSec}s ease` : 'none',
-                overflowY: dayOffset === 0 ? 'auto' : 'hidden'
-            }">
-                <div class="loading-wrapper" v-if="gameSummariesSets.isLoadingMap.value[dayOffset]">
-                    <LoadingSpinner />
-                </div>
-                <ServerError v-else-if="gameSummariesSets.error.value[dayOffset].isError"
-                    :error-message="gameSummariesSets.error.value[dayOffset].errorMessage" />
-                <template v-else>
-                    <div v-if="gameSummariesSets.gameSummaryMap.value[dayOffset].length === 0" class="no-game">no game
-                    </div>
-                    <GameCard v-for="(game, j) in gameSummariesSets.gameSummaryMap.value[dayOffset]" :key="j"
-                        :game-summary="game" :game-date="selectedDateISOString" :score-display="scoreDisplay"
-                        :full-view="true" />
-                </template>
+        <v-sheet class="d-flex flex-grow-1 overflow-hidden position-relative bg-base" @touchstart="onTouchStart"
+            @touchmove="onTouchMove" @touchend="onTouchEnd">
+            <div :ref="dayOffset === 0 ? 'scroll' : undefined" class="d-flex flex-column hide-scrollbar"
+                v-for="dayOffset in gameSummariesSets.dayOffsetsList" :key="dayOffset" style="
+                    width: 100%;
+                    height: 100%;
+                    position: absolute;
+                    overflow-x: hidden;
+                    box-sizing: border-box;
+                    will-change: transform;
+                " :style="{
+                    transform: `translateX(${offsets[dayOffset]}px)`,
+                    transition: isSliding ? `transform ${slideAnimationDurationSec}s ease` : 'none',
+                    overflowY: dayOffset === 0 ? 'auto' : 'hidden'
+                }">
+                <v-container v-for="(game, j) in gameSummariesSets.gameSummaryMap.value[dayOffset]">
+                    <v-skeleton-loader elevation="7" :loading="gameSummariesSets.isLoadingMap.value[dayOffset]"
+                        type="image" class="w-100" color="lighten">
+                        <v-responsive class="elevation-7 rounded">
+                            <GameCard :key="j" :game-summary="game" :score-display="scoreDisplay" :full-view="true" />
+                        </v-responsive>
+                    </v-skeleton-loader>
+                </v-container>
+                <v-card
+                    v-if="gameSummariesSets.gameSummaryMap.value[dayOffset].length === 0 && !gameSummariesSets.error.value[dayOffset].isError"
+                    elevation="0" class="bg-base">
+                    <v-card-title class="text-center text-h3 justify-center">no game</v-card-title>
+                </v-card>
+                <v-empty-state v-if="gameSummariesSets.error.value[dayOffset].isError" title="Whoops, Server Error"
+                    :text="gameSummariesSets.error.value[dayOffset].errorMessage" class="text-accent" />
             </div>
-        </div>
-    </div>
+        </v-sheet>
+    </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 
-import GameCard from '@/components/GameCard.vue'
-import CalendarScroller from '@/components/CalendarScroller.vue'
-import MonthlyCalendar from '@/components/MonthlyCalendar.vue'
-import LoadingSpinner from '@/components/LoadingSpinner.vue'
-import ServerError from '@/components/ServerError.vue'
-
-import { getGameSummaries, isGameSummary } from '@/services/getGameSummariesService'
-import { swipeService } from '@/services/swipeService'
-import { CacheService } from '@/services/cacheService'
-
-import { gameDateStore } from '@/store/gameDate'
-import { settingsStore } from '@/store/settings'
-
-import type { GameSummary } from '@/types/GameSummary'
-import { GameSummariesSets } from '@/types/GameSummariesSets'
+import { GameSummariesApi } from '../apis/gameSummaries'
+import GameCard from '../components/GameCard.vue'
+import CalendarScroller from '../components/CalendarScroller.vue'
+import { Cache } from '../core/cache'
+import { swipe } from '../core/swipe'
+import { gameDateStore } from '../store/gameDate'
+import { settingsStore } from '../store/settings'
+import { GameSummary, isGameSummary } from '../types/GameSummary'
+import { GameSummariesSets } from '../types/GameSummariesSets'
 
 const selectedDate = ref(gameDateStore().gameDate)
-const selectedDateISOString = computed(() => selectedDate.value.toISOString().slice(0, 10))
 
 const scoreDisplay = settingsStore().scoreDisplay
 
-const showPopup = ref(false)
 const numberOfPreviousDays = 1
 const numberOfFutureDays = 1
 const gameSummariesSets = new GameSummariesSets(numberOfPreviousDays, numberOfFutureDays)
 
 const updateDate = (date: Date) => {
+    const element = scroll.value?.[0] as HTMLElement | undefined
+    if (element) {
+        element.scrollTo({ top: 0 })
+    }
     selectedDate.value = date
     gameDateStore().gameDate = date
 }
 
-const selectDateOnMonthlyCalendar = (date: Date) => {
-    updateDate(date)
-    showPopup.value = false
-}
+const scroll = ref<HTMLElement[] | null>(null)
 
-const goToToday = () => {
-    updateDate(new Date())
-}
-
-const catcheService = new CacheService<GameSummary[]>({
+const catcheService = new Cache<GameSummary[]>({
     removalPolicy: 'farthest',
     getDistanceForFarthest: (time) => Math.abs(time - new Date(selectedDate.value).setHours(0, 0, 0, 0)),
     cacheFilter: (_, data: unknown): data is GameSummary[] => {
@@ -90,7 +79,7 @@ const catcheService = new CacheService<GameSummary[]>({
         else return data.every(item => isGameSummary(item) && (item as GameSummary).status_id !== 2)
     }
 })
-
+const gameSummariesApi = new GameSummariesApi()
 const updategameSummariesSets = async () => {
     const base = selectedDate.value
     let targetDate: Date
@@ -105,7 +94,7 @@ const updategameSummariesSets = async () => {
         gameSummariesSets.isLoadingMap.value[dayOffset] = true
         gameSummariesSets.error.value[dayOffset].isError = false
         gameSummariesSets.error.value[dayOffset].errorMessage = ''
-        gameSummariesSets.gameSummaryMap.value[dayOffset] = []
+        gameSummariesSets.gameSummaryMap.value[dayOffset] = [new GameSummary()]
 
         // update
         targetDate = new Date(base)
@@ -114,7 +103,7 @@ const updategameSummariesSets = async () => {
         try {
             const response = await catcheService.getOrFetch(
                 new Date(targetDate).setHours(0, 0, 0, 0),
-                () => getGameSummaries(targetDate)
+                () => gameSummariesApi.getGameSummaries(targetDate)
             )
             gameSummariesSets.gameSummaryMap.value[dayOffset] = response
         } catch (error) {
@@ -145,7 +134,7 @@ const {
     onTouchStart,
     onTouchMove,
     onTouchEnd
-} = swipeService(slideToNextDay, slideToPreviousDay, gameSummariesSets.dayOffsetsList.map(dayOffset => {
+} = swipe(slideToNextDay, slideToPreviousDay, gameSummariesSets.dayOffsetsList.map(dayOffset => {
     const windowWidth = window.innerWidth
     return {
         key: dayOffset,
@@ -165,65 +154,4 @@ const {
 
 </script>
 
-<style scoped>
-.container {
-    background-color: var(--main-backgroud-color);
-    color: #fff;
-    height: calc(100% - var(--footer-height));
-    display: flex;
-    flex-direction: column;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0px;
-    font-size: 20px;
-    align-items: center;
-}
-
-.header-button {
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 20px;
-    width: 70px;
-    align-items: center;
-    cursor: pointer;
-}
-
-.game-slider-container {
-    flex: 1;
-    overflow-x: hidden;
-    position: relative;
-}
-
-.game-slider-container::-webkit-scrollbar {
-    display: none;
-}
-
-.game-page {
-    width: 100vw;
-    height: 100%;
-    box-sizing: border-box;
-    will-change: transform;
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    overflow-x: hidden;
-}
-
-.loading-wrapper {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.no-game {
-    margin-top: 10px;
-    font-size: 20px;
-    font-weight: bold;
-    text-align: center;
-}
-</style>
+<style scoped></style>

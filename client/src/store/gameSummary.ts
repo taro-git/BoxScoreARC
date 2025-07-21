@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-import { GameSummary } from '@/types/GameSummary'
+import { GameSummary } from '../types/GameSummary'
 
 
 export const gameSummaryStore = defineStore('gameSummary', {

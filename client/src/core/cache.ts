@@ -1,7 +1,6 @@
 type RemovalPolicy = 'farthest' | 'oldest' | 'none' | 'lru'
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-interface CommonCacheOptions<T> {
+interface CommonCacheOptions<_T> {
     maxItems?: number
     baseKey?: number
     ttlSeconds?: number
@@ -28,7 +27,7 @@ interface CacheEntry<T> {
 }
 
 // MYTODO データベースを活用したキャッシュの検討
-export class CacheService<T> {
+export class Cache<T> {
     private cache = new Map<number, CacheEntry<T>>()
     private maxItems: number
     private removalPolicy: RemovalPolicy

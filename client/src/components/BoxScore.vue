@@ -1,246 +1,89 @@
 <template>
-    <div class="teams">
-        <div @click="selectedTeam = 'away'" :class="['team', selectedTeam === 'away' ? 'selected' : '']">{{
-            boxScoreSummary.away.abbreviation }}</div>
-        <div @click="selectedTeam = 'home'" :class="['team', selectedTeam === 'home' ? 'selected' : '']">{{
-            boxScoreSummary.home.abbreviation }}</div>
-    </div>
-    <div class="table-container">
-        <table class="fixed-table">
-            <thead>
-                <tr>
-                    <th class="left top-row-1 z-high" :colspan="2">
-                        PLAYER
-                    </th>
-                    <th v-for="(col, colIndex) in columns" :key="'head1-' + colIndex" class="top-row-1">
-                        {{ col }}
-                    </th>
-                </tr>
-
-                <tr>
-                    <th class="left top-row-2 z-high" :colspan="2">
-                        STARTERS
-                    </th>
-                    <th class="top-row-2" :colspan="columns.length">
-                    </th>
-                </tr>
-            </thead>
-
-            <tbody>
-                <tr v-for="(row, rowIndex) in rows" :key="'row-' + rowIndex">
-                    <template v-if="rowIndex === 5">
-                        <th class="left top-row-3 z-high" :colspan="2">
-                            BENCH
-                        </th>
-                        <th class="top-row-3" :colspan="columns.length">
-                        </th>
-                    </template>
-                    <template v-else-if="!row.is_inactive">
-                        <th :class="['left1-data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]">
-                            {{ `#${row.jersey}` }}
-                        </th>
-                        <th :class="['left2-data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]">
-                            {{ row.player_name }}
-                        </th>
-
-                        <td :class="['data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]">
-                            {{ row.pos }}
-                        </td>
-                        <td :class="['data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]"
-                            v-for="(cell, colIndex) in row.comulative_boxscore"
-                            :key="'cell-' + rowIndex + '-' + colIndex">
-                            <template v-if="colIndex == 8 || colIndex == 11 || colIndex == 14">
-                                {{ `${cell}%` }}
-                            </template>
-                            <template v-else>
-                                {{ cell }}
-                            </template>
-                        </td>
-                    </template>
-                    <template v-else>
-                        <th :class="['left1-data', 'inactive']">
-                            {{ `#${row.jersey}` }}
-                        </th>
-                        <th :class="['left2-data', 'inactive']">
-                            {{ `${row.player_name} is inactive` }}
-                        </th>
-                        <th :class="'inactive'" :colspan="columns.length">
-                        </th>
-                    </template>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+    <v-sheet class="bg-base hide-scroll d-flex flex-column fill-height">
+        <v-btn-toggle v-model="selectedTeam" color="accent" class="justify-center" mandatory>
+            <v-col v-for="team in teams" cols="5" class="pa-0">
+                <v-btn :value="team" class="bg-darken w-100">{{ boxScoreSummary[team].abbreviation }}</v-btn>
+            </v-col>
+        </v-btn-toggle>
+        <v-skeleton-loader elevation="7" :loading="isLoading" color="lighten" type="table-row@12">
+            <v-responsive class="elevation-7 rounded fill-height">
+                <box-score-table :box-score-summary="boxScoreSummary" :box-score-data="boxScoreData"
+                    :selected-team="selectedTeam" :game-clock-range="gameClockRange" />
+            </v-responsive>
+        </v-skeleton-loader>
+    </v-sheet>
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref, Ref } from 'vue'
+import { computed, defineProps, ref, watch } from 'vue'
 
-import { BOX_SCORE_COLUMNS, BoxScoreData, BoxScoreRow } from '@/types/BoxScore'
-import { BoxScoreSummary, Player } from '@/types/BoxScoreSummary';
+import { BoxScoreRawDataApi } from '../apis/boxScoreRawData';
+import { BoxScoreSummaryApi } from '../apis/boxScoreSummary';
+import BoxScoreTable from './BoxScoreTable.vue';
+import { updateBoxScoreData } from '../core/boxScoreData';
+import { gameSummaryStore } from '../store/gameSummary';
+import { BOX_SCORE_COLUMN_KEYS, type BoxScoreData, type BoxScoreRawData, isBoxScoreRawData } from '../types/BoxScore'
+import { BoxScoreSummary, isBoxScoreSummary } from '../types/BoxScoreSummary';
+import { Cache } from '../core/cache';
 
 const props = defineProps<{
-    boxScoreSummary: BoxScoreSummary
-    boxScoreData: Ref<BoxScoreData>
+    gameId: string
+    gameClockRange: number[]
 }>()
 
-const selectedTeam = ref<'home' | 'away'>('away')
+const teams = ['away', 'home'] as const
+type Teams = typeof teams[number]
+const selectedTeam = ref<Teams>('away')
 
-const columns = BOX_SCORE_COLUMNS
-
-const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
-    let boxScoreRows = players.map((player) => ({
-        player_id: player.player_id,
-        player_name: player.name,
-        jersey: player.jersey,
-        pos: player.position,
-        is_inactive: player.is_inactive,
-        comulative_boxscore: props.boxScoreData.value[player.player_id] ?? []
-    }))
-    boxScoreRows.splice(5, 0, {
-        player_id: 0,
-        player_name: 'no data',
-        jersey: '',
-        pos: '',
-        is_inactive: false,
-        comulative_boxscore: []
-    })
-    return boxScoreRows
-}
-
-const boxScore = computed(() => ({
-    home: convertPlayersToBoxScore(props.boxScoreSummary.home.players),
-    away: convertPlayersToBoxScore(props.boxScoreSummary.away.players)
-}))
-
-const rows = computed(() => {
-    return selectedTeam.value === 'home' ? boxScore.value.home : boxScore.value.away
+const gameSummary = gameSummaryStore()
+gameSummary.away_score = 0
+gameSummary.home_score = 0
+watch(props.gameClockRange, ([startRange, endRange]) => {
+    boxScoreData.value = updateBoxScoreData(boxScoreData.value, boxScoreRawData.value, startRange, endRange)
+    gameSummary.away_score = boxScoreSummary.value.away.players.filter(player => !player.is_inactive).map(player => player.player_id)
+        .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
+    gameSummary.home_score = boxScoreSummary.value.home.players.filter(player => !player.is_inactive).map(player => player.player_id)
+        .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
 })
 
+const boxScoreSummaryLoading = ref(true)
+const boxScoreDataLoading = ref(true)
+const isLoading = computed(() => boxScoreSummaryLoading.value || boxScoreDataLoading.value)
+
+const boxScoreSummarycacheService = new Cache<BoxScoreSummary>({
+    ttlSeconds: 900,
+    maxItems: 10,
+    cacheFilter: (_, data: unknown): data is BoxScoreSummary => isBoxScoreSummary(data),
+})
+
+const boxScoreSummary = ref<BoxScoreSummary>(new BoxScoreSummary())
+
+const boxScoreData = ref<BoxScoreData>({})
+const boxScoreSummaryApi = new BoxScoreSummaryApi()
+boxScoreSummarycacheService.getOrFetch(Number(props.gameId), () => boxScoreSummaryApi.getBoxScoreSummary(props.gameId))
+    .then((response) => {
+        boxScoreSummary.value = response
+        gameSummary.away_logo = response.away.logo
+        gameSummary.home_logo = response.home.logo
+        const players = [...response.home.players, ...response.away.players]
+        players.forEach(player => {
+            if (!player.is_inactive) boxScoreData.value[player.player_id] = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
+        })
+        boxScoreSummaryLoading.value = false
+    })
+
+const boxScoreRawDatacacheService = new Cache<BoxScoreRawData>({
+    ttlSeconds: 900,
+    maxItems: 5,
+    cacheFilter: (_, data: unknown): data is BoxScoreRawData => isBoxScoreRawData(data),
+})
+const boxScoreRawData = ref<BoxScoreRawData>({})
+const boxScoreRawDataApi = new BoxScoreRawDataApi()
+boxScoreRawDatacacheService.getOrFetch(Number(props.gameId), () => boxScoreRawDataApi.getBoxScoreRawData(props.gameId))
+    .then((response) => {
+        boxScoreRawData.value = response
+        boxScoreDataLoading.value = false
+    })
 </script>
 
-<style scoped>
-.teams {
-    width: 100vw - 80px;
-    display: flex;
-    margin: 20px 40px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-}
-
-.team {
-    flex: 1;
-    display: grid;
-    text-align: center;
-    align-items: center;
-    height: 20px;
-    font-size: 12px;
-}
-
-.selected {
-    background-color: rgb(0, 158, 221);
-    border-radius: 6px;
-}
-
-.table-container {
-    max-width: 100%;
-    color: black;
-    overflow: auto;
-    border: 1px solid #ccc;
-}
-
-.table-container::-webkit-scrollbar {
-    display: none;
-}
-
-.fixed-table {
-    border-spacing: 0px;
-}
-
-.fixed-table th,
-.fixed-table td {
-    padding: 6px 10px;
-    white-space: nowrap;
-}
-
-.top-row-1 {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    padding: 0 !important;
-    height: 20px;
-    box-sizing: border-box;
-    background-color: rgb(0, 48, 136);
-    color: white;
-    font-size: 10px;
-    text-align: center;
-}
-
-.top-row-2 {
-    position: sticky;
-    top: 20px;
-    z-index: 2;
-    padding: 0 !important;
-    height: 15px;
-    box-sizing: border-box;
-    font-size: 10px;
-    text-align: center;
-    background-color: #999999;
-}
-
-.top-row-3 {
-    position: sticky;
-    top: 35px;
-    padding: 0 !important;
-    height: 15px;
-    box-sizing: border-box;
-    font-size: 10px;
-    text-align: center;
-    background-color: #999999;
-}
-
-.z-high {
-    z-index: 3;
-}
-
-.left {
-    position: sticky;
-    left: 0;
-}
-
-.left1-data {
-    position: sticky;
-    left: 0;
-    max-width: 46px;
-    min-width: 46px;
-    font-size: 14px;
-    box-sizing: border-box;
-    background-color: white;
-    text-align: left;
-}
-
-.left2-data {
-    position: sticky;
-    left: 46px;
-    background-color: white;
-    text-align: left;
-    border-right: 1px solid #999999;
-}
-
-.data {
-    z-index: 1;
-    text-align: center;
-    background-color: white;
-}
-
-.odd-row {
-    background-color: #f1f1f1;
-}
-
-.inactive {
-    background-color: #999999;
-    text-align: left;
-    overflow: visible;
-    max-width: 0px;
-}
-</style>
+<style scoped></style>

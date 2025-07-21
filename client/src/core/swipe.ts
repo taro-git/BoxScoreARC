@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { Ref } from 'vue'
+import { type Ref } from 'vue'
 
 type SwipeBehavior = {
     offsets: Ref<{ [key: number]: number }>
@@ -25,7 +25,7 @@ export type PositionControl = {
     }
 }
 
-export const swipeService = (
+export const swipe = (
     onSwipeLeftFunc: () => void,
     onSwipeRightFunc: () => void,
     positionControls: PositionControl[],

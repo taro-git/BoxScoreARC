@@ -1,43 +1,64 @@
 <template>
-    <div class="calendar-wrapper">
-        <div class="month">{{ selectedMonth }}</div>
-        <div class="scroll-container" ref="scrollContainer">
-            <div v-for="date in dates" :key="date.toDateString()" :ref="el => assignRef(date, el)"
-                :class="['date', isSelected(date) ? 'selected' : isToday(date) ? 'today' : '']"
-                @click="$emit('update-date', date)">
-                {{ date.getDate() }}
-            </div>
-        </div>
-    </div>
+    <v-card flat class="pa-2 bg-darken">
+        <v-row justify="space-between" class="ma-2">
+            <v-btn size="small" width="50px" variant="text" @click="$emit('update-date', new Date())">
+                Today
+            </v-btn>
+            <span class="text-h6">{{ selectedMonth }}</span>
+            <v-btn size="xlarge" min-width="50px" variant="text" icon @click="dialog = true">
+                <v-icon>mdi-calendar</v-icon>
+            </v-btn>
+        </v-row>
+
+        <v-slide-group show-arrows class="px-2" center-active v-model="selectedDateString">
+            <v-slide-group-item v-for="date in dates" :key="date.toDateString()" :value="date.toDateString()">
+                <v-chip @click="$emit('update-date', date)" class="ma-1 text-center" pill :style="{
+                    minWidth: '3rem',
+                    justifyContent: 'center',
+                    fontWeight: isSelected(date) ? 'bold' : undefined,
+                    fontSize: isSelected(date)
+                        ? '1.5rem'
+                        : isToday(date)
+                            ? '1.2rem'
+                            : undefined,
+                    border: isSelected(date)
+                        ? '2px solid'
+                        : isToday(date)
+                            ? '1px dashed'
+                            : undefined
+                }">
+                    {{ date.getDate() }}
+                </v-chip>
+            </v-slide-group-item>
+        </v-slide-group>
+    </v-card>
+    <v-dialog v-model="dialog">
+        <v-date-picker v-model="selectedDateString" v-on:update:model-value="dialog = false" />
+    </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, defineProps, defineEmits, ComponentPublicInstance } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 const props = defineProps<{
     selectedDate: Date
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
     (e: 'update-date', date: Date): void
 }>()
 
+const selectedMonth = computed(() =>
+    `${props.selectedDate.getFullYear()}/${props.selectedDate.getMonth() + 1}`
+)
+
+const dialog = ref(false)
+
 const dates = ref<Date[]>([])
-
-const scrollContainer = ref<HTMLElement | null>(null)
-const dateRefs = new Map<string, HTMLElement>()
-
-const assignRef = (date: Date, el: Element | ComponentPublicInstance | null) => {
-    if (el instanceof HTMLElement) {
-        dateRefs.set(date.toDateString(), el)
-    }
-}
-
-
 const generateDates = (centerDate: Date) => {
-    const newDates: Date[] = []
     const start = new Date(centerDate)
     start.setDate(centerDate.getDate() - 30)
+    const newDates: Date[] = []
     for (let i = 0; i <= 60; i++) {
         const d = new Date(start)
         d.setDate(start.getDate() + i)
@@ -45,81 +66,26 @@ const generateDates = (centerDate: Date) => {
     }
     dates.value = newDates
 }
-
-const isSelected = (date: Date) =>
-    date.toDateString() === props.selectedDate.toDateString()
-
-const isToday = (date: Date) =>
-    date.getYear() === new Date().getYear() &&
-    date.getMonth() === new Date().getMonth() &&
-    date.getDate() === new Date().getDate()
-
-const scrollToSelectedDate = () => {
-    nextTick(() => {
-        const selectedEl = dateRefs.get(props.selectedDate.toDateString())
-        selectedEl?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
-    })
-}
-
 watch(() => props.selectedDate, (newDate) => {
     generateDates(newDate)
-    scrollToSelectedDate()
 }, { immediate: true })
-
-const selectedMonth = computed(() =>
-    `${props.selectedDate.getFullYear()}/${props.selectedDate.getMonth() + 1}`
-)
+const isSelected = (date: Date) =>
+    date.toDateString() === props.selectedDate.toDateString()
+const isToday = (date: Date) => {
+    const now = new Date()
+    return date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth() &&
+        date.getDate() === now.getDate()
+}
+const selectedDateString = computed({
+    get: () => props.selectedDate.toDateString(),
+    set: (val: string) => {
+        const date = new Date(val)
+        if (!isNaN(date.getTime())) {
+            emit('update-date', date)
+        }
+    }
+})
 </script>
 
-<style scoped>
-.calendar-wrapper {
-    text-align: center;
-    padding: 10px 0px;
-    border-bottom: var(--border);
-    background-color: var(--dark-backgroud-color);
-}
-
-.month {
-    font-size: 14px;
-    margin-bottom: 5px;
-}
-
-.scroll-container {
-    display: flex;
-    overflow-x: auto;
-    padding: 5px 0;
-    scrollbar-width: none;
-    /* Firefox */
-}
-
-.scroll-container::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari, Edge */
-}
-
-.date {
-    background: transparent;
-    color: white;
-    padding: 10px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    white-space: nowrap;
-    flex: 0 0 auto;
-    font-size: 14px;
-    border: 1px solid transparent;
-    transition: all 0.2s ease;
-    width: 25px;
-}
-
-.date.selected {
-    background: rgba(255, 255, 255, 0.9);
-    color: #1A2B5D;
-    font-weight: bold;
-    border: 1px solid #ffffff;
-    font-size: 16px;
-}
-
-.date.today {
-    background: rgba(255, 255, 255, 0.15);
-}
-</style>
+<style scoped></style>

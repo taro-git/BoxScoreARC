@@ -8,8 +8,8 @@ from .views.NBABoxScoreDataView import NBABoxScoreDataView
 
 urlpatterns = [
     path('clickhouse-test/', clickhouse_test),
-    path('nba/game-summaries/', NBAGameSummariesView.as_view()),
-    path('nba/box-score-summary/', NBABoxScoreSummaryView.as_view()),
-    path('nba/box-score-data/', NBABoxScoreDataView.as_view()),
+    path('nba/game-summaries', NBAGameSummariesView.as_view()),
+    path('nba/box-score-summary', NBABoxScoreSummaryView.as_view()),
+    path('nba/box-score-data', NBABoxScoreDataView.as_view()),
     path('nbaapi-test/', NBAApiTest.as_view()),
 ]

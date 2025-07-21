@@ -1,6 +1,6 @@
-import { Ref, ref } from 'vue'
+import { type Ref, ref } from 'vue'
 
-import type { GameSummary } from '@/types/GameSummary'
+import { GameSummary } from '../types/GameSummary'
 
 export class GameSummariesSets {
     numberOfPreviousDays: number
@@ -19,7 +19,7 @@ export class GameSummariesSets {
         this.error = ref({})
 
         for (let i = -numberOfPreviousDays; i <= numberOfFutureDays; i++) {
-            this.gameSummaryMap.value[i] = []
+            this.gameSummaryMap.value[i] = [new GameSummary()]
             this.isLoadingMap.value[i] = true
             this.error.value[i] = {
                 isError: false,

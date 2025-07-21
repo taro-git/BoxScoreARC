@@ -2,7 +2,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from typing import Any, Dict, List
 
-from .GameSummaryModel import TeamAbbreviation, TEAM_LOGO
+from .GameSummaryModel import TeamAbbreviation, TEAM_LOGO, fetch_and_encode_svg
 from ..postgres.BoxScoreSummaryForPostgresModel import BoxScoreSummaryForPostgres
 
 @dataclass
@@ -22,7 +22,7 @@ class TeamSummary:
     players: List[Player]
 
     def __post_init__(self):
-        self.logo = TEAM_LOGO.get(self.abbreviation, '')
+        self.logo = fetch_and_encode_svg(TEAM_LOGO.get(self.abbreviation, ''))
 
 
 @dataclass(kw_only=True)

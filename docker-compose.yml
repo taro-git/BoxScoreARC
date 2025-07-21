@@ -45,7 +45,7 @@ services:
       - "traefik.http.routers.client.rule=(Host(`localhost`) || Host(`desktop-t.tail535db5.ts.net`)) && PathPrefix(`/view/`)"
       - "traefik.http.routers.client.entrypoints=websecure"
       - "traefik.http.routers.client.tls=true"
-      - "traefik.http.services.client.loadbalancer.server.port=8080"
+      - "traefik.http.services.client.loadbalancer.server.port=5173"
 
   client-prod:
     profiles: ["prod"]
