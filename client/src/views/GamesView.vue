@@ -5,7 +5,7 @@
 
         <v-sheet class="d-flex flex-grow-1 overflow-hidden position-relative bg-base" @touchstart="onTouchStart"
             @touchmove="onTouchMove" @touchend="onTouchEnd">
-            <div :ref="dayOffset === 0 ? 'scroll' : undefined" class="d-flex flex-column hide-scrollbar"
+            <div ref="scroll" class="d-flex flex-column hide-scrollbar"
                 v-for="dayOffset in gameSummariesSets.dayOffsetsList" :key="dayOffset" style="
                     width: 100%;
                     height: 100%;
@@ -60,7 +60,7 @@ const numberOfFutureDays = 1
 const gameSummariesSets = new GameSummariesSets(numberOfPreviousDays, numberOfFutureDays)
 
 const updateDate = (date: Date) => {
-    const element = scroll.value?.[0] as HTMLElement | undefined
+    const element = scroll.value?.[Math.floor(gameSummariesSets.dayOffsetsList.length / 2)] as HTMLElement | undefined
     if (element) {
         element.scrollTo({ top: 0 })
     }
