@@ -7,7 +7,7 @@ import sys
 def main():
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'project_box_score_arc.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'box_score_arc.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

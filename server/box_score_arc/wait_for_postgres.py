@@ -28,6 +28,6 @@ def wait_for_postgres(retries=100, delay=1):
 if __name__ == "__main__":
     import django
     import os
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "project_box_score_arc.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "box_score_arc.settings")
     django.setup()
     wait_for_postgres()

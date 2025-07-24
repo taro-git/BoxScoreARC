@@ -2,7 +2,7 @@
 set -e
 
 echo "Wait for PostgreSQL to become available..."
-python /app/project_box_score_arc/wait_for_postgres.py
+python /app/box_score_arc/wait_for_postgres.py
 
 echo "Applying database migrations..."
 python manage.py migrate --noinput

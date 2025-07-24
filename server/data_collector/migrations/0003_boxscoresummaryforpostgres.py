@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('app_data_collecter', '0002_boxscoredataforpostgres'),
+        ('data_collector', '0002_boxscoredataforpostgres'),
     ]
 
     operations = [
