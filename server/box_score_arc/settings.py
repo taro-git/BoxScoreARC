@@ -17,15 +17,11 @@ import sys
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-=du7&hx0ng049m)(2r8feazx*@m_+1j&=j4mb*aqj9-395nibg'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -42,6 +38,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'data_collector',
+    'rest_api',
 ]
 
 MIDDLEWARE = [
@@ -74,16 +71,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'box_score_arc.wsgi.application'
 
+is_dev_mode = 'runserver' in sys.argv
+
+DEBUG = is_dev_mode
+
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
+        *(['rest_framework.renderers.BrowsableAPIRenderer'] if is_dev_mode else []),
     ]
 }
 
 # Security
 
-CORS_ALLOW_ALL_ORIGINS = 'runserver' in sys.argv
+CORS_ALLOW_ALL_ORIGINS = is_dev_mode
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    *(['http://localhost'] if is_dev_mode else []),
+    *(['https://localhost'] if is_dev_mode else []),
+]
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -133,7 +139,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = 'api/v2/staticfiles/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
