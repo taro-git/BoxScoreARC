@@ -77,8 +77,11 @@ DEBUG = is_dev_mode
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        *(['rest_framework.renderers.BrowsableAPIRenderer'] if is_dev_mode else []),
+        'djangorestframework_camel_case.render.CamelCaseJSONRenderer',
+        *(['djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer'] if is_dev_mode else []),
+    ],
+    'DEFAULT_PARSER_CLASSES': [
+        'djangorestframework_camel_case.parser.CamelCaseJSONParser',
     ]
 }
 
