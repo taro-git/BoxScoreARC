@@ -42,20 +42,21 @@ class GameSummarySerializer(serializers.ModelSerializer):
         return game
 
     def update(self, instance, validated_data):
+        home_players_data = validated_data.pop('home_players_on_game', None)
+        away_players_data = validated_data.pop('away_players_on_game', None)
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-
-        home_players_data = validated_data.pop('home_players_on_game', None)
-        away_players_data = validated_data.pop('away_players_on_game', None)
+        
         if home_players_data is not None:
             instance.players.filter(is_home=True).delete()
             for home_player_data in home_players_data:
-                PlayerOnGame.objects.create(game=instance, **home_player_data)
+                PlayerOnGame.objects.create(game_id=instance, is_home=True, **home_player_data)
         if away_players_data is not None:
-            instance.players.filter(is_home=True).delete()
+            instance.players.filter(is_home=False).delete()
             for away_player_data in away_players_data:
-                PlayerOnGame.objects.create(game=instance, **away_player_data)
+                PlayerOnGame.objects.create(game_id=instance, is_home=False, **away_player_data)
 
         return instance
 

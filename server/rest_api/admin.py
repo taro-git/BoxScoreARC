@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models.game_summary import GameSummary, Team, PlayerOnGame
+from .models.box_score import BoxScore, BoxScorePlayer, BoxScoreData
 
 @admin.register(GameSummary)
 class GameSummary(admin.ModelAdmin):
@@ -12,4 +13,17 @@ class Team(admin.ModelAdmin):
 
 @admin.register(PlayerOnGame)
 class PlayerOnGame(admin.ModelAdmin):
+    pass
+
+
+@admin.register(BoxScore)
+class BoxScore(admin.ModelAdmin):
+    pass
+
+@admin.register(BoxScorePlayer)
+class BoxScorePlayer(admin.ModelAdmin):
+    pass
+
+@admin.register(BoxScoreData)
+class BoxScoreData(admin.ModelAdmin):
     pass

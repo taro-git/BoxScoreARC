@@ -40,5 +40,5 @@ class PlayerOnGame(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['game_id', 'player_id'], name='unique_game_id_player_id')
+            models.UniqueConstraint(fields=['game_id', 'player_id'], name='unique_game_summary_game_id_player_id')
         ]

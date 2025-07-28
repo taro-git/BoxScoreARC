@@ -77,11 +77,14 @@ DEBUG = is_dev_mode
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
-        'djangorestframework_camel_case.render.CamelCaseJSONRenderer',
+        *(['djangorestframework_camel_case.render.CamelCaseJSONRenderer'] if is_dev_mode else ['rest_framework.renderers.JSONRenderer']),
         *(['djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer'] if is_dev_mode else []),
     ],
     'DEFAULT_PARSER_CLASSES': [
-        'djangorestframework_camel_case.parser.CamelCaseJSONParser',
+        *(['djangorestframework_camel_case.parser.CamelCaseJSONParser'] if is_dev_mode else []),
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
     ]
 }
 
@@ -150,3 +153,23 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+if is_dev_mode:
+    import django_filters
+
+    TEMPLATES = [
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': [
+                os.path.join(os.path.dirname(django_filters.__file__), 'templates'),
+            ],
+            'APP_DIRS': True,
+            'OPTIONS': {
+                'context_processors': [
+                    'django.template.context_processors.request',
+                    'django.contrib.auth.context_processors.auth',
+                    'django.contrib.messages.context_processors.messages',
+                ],
+            },
+        },
+    ]
