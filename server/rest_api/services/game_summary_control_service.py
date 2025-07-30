@@ -9,7 +9,7 @@ from rest_api.models.game_summary import GameSummary, Team
 from rest_api.serializers.game_summary import GameSummarySerializer, TeamSerializer
 
 
-class PlayerOnGameData(TypedDict):
+class PlayerOnGameCreate(TypedDict):
     player_id: int
     name: str
     jersey: str
@@ -18,7 +18,7 @@ class PlayerOnGameData(TypedDict):
     is_inactive: bool
     sequence: int
 
-class GameSummaryData(TypedDict):
+class GameSummaryCreate(TypedDict):
     game_id: int
     sequence: int
     status_id: int
@@ -32,28 +32,28 @@ class GameSummaryData(TypedDict):
     away_team_abb: str
     home_score: int
     away_score: int
-    home_players: List[PlayerOnGameData]
-    away_players: List[PlayerOnGameData]
+    home_players: List[PlayerOnGameCreate]
+    away_players: List[PlayerOnGameCreate]
 
-def upsert_game_summary(game_summary_data: GameSummaryData):
+def upsert_game_summary(game_summary_create: GameSummaryCreate):
     """指定の game_id の game summary が、なければ新規作成、あれば更新します."""
-    _create_not_existing_team(game_summary_data.get('home_team_id'), game_summary_data.pop('home_team_abb', None))
-    _create_not_existing_team(game_summary_data.get('away_team_id'), game_summary_data.pop('away_team_abb', None))
+    _create_not_existing_team(game_summary_create.get('home_team_id'), game_summary_create.pop('home_team_abb', None))
+    _create_not_existing_team(game_summary_create.get('away_team_id'), game_summary_create.pop('away_team_abb', None))
 
-    game_id = game_summary_data.get("game_id")
+    game_id = game_summary_create.get("game_id")
 
     if game_id:
         if GameSummary.objects.filter(game_id=game_id).exists():
             instance = GameSummary.objects.get(game_id=game_id)
         else:
             instance = None
-        serializer = GameSummarySerializer(instance=instance, data=game_summary_data)
+        serializer = GameSummarySerializer(instance=instance, data=game_summary_create)
         if serializer.is_valid():
             serializer.save()
         else:
             raise ValueError(serializer.errors)
     else:
-        raise ValueError('game ID is None or undefined')
+        raise ValueError('Game ID is not set')
 
 
 def _create_not_existing_team(team_id: int, team_abb: str):
