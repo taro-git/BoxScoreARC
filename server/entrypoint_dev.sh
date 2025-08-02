@@ -8,7 +8,6 @@ echo "Removing old migrations"
 find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
 find . -path "*/migrations/*.pyc" -delete
 echo "Making migrations"
-python manage.py migrate --fake data_collector zero
 python manage.py migrate --fake rest_api zero
 python manage.py makemigrations
 

@@ -1,7 +1,7 @@
 <template>
     <div :style="{ 'background-color': 'white' }">
         <router-link :to="{ name: 'game', params: { gameId: gameSummary.gameId } }" class="card" @click="selectGame">
-            <div class="status">{{ gameSummary.statusText }}</div>
+            <div class="status">{{ statusText }}</div>
             <div v-if="fullView" class="category">{{ gameSummary.gameCategory }}</div>
             <div class="teams">
                 <div class="team">
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
+import { ref } from 'vue'
 
 import { gameStore } from '../store/game';
 
@@ -34,6 +34,11 @@ const props = defineProps<{
 }>()
 
 const selectedGame = gameStore()
+
+const statusText = ref(props.gameSummary.statusText)
+if (!props.scoreDisplay && props.gameSummary.statusId == 3) {
+    statusText.value = 'Final'
+}
 
 const selectGame = () => {
     Object.assign(selectedGame.gameSummary, props.gameSummary)

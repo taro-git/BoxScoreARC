@@ -69,6 +69,7 @@ const updateDate = (date: Date) => {
 
 const scroll = ref<HTMLElement[] | null>(null)
 
+const statusIdPriority = [2, 1, 3]
 const gameSummariesApi = new GameSummariesApi()
 const updategameSummariesSets = async () => {
     const base = selectedDate.value
@@ -92,7 +93,16 @@ const updategameSummariesSets = async () => {
 
         try {
             const response = await gameSummariesApi.getGameSummariesByDate(targetDate)
-            gameSummariesSets.gameSummaryMap.value[dayOffset] = response
+            const sortedResponse = response.sort((a, b) => {
+                if (a.statusId !== b.statusId) {
+                    return statusIdPriority.indexOf(a.statusId) - statusIdPriority.indexOf(b.statusId)
+                }
+                if (a.gameDatetime !== b.gameDatetime) {
+                    return a.gameDatetime.getTime() - b.gameDatetime.getTime()
+                }
+                return a.sequence - b.sequence
+            })
+            gameSummariesSets.gameSummaryMap.value[dayOffset] = sortedResponse
         } catch (error) {
             gameSummariesSets.error.value[dayOffset].isError = true
             gameSummariesSets.error.value[dayOffset].errorMessage =

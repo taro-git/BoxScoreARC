@@ -4,6 +4,7 @@ import re
 from pandas import DataFrame
 from typing import List
 
+from django.db import transaction, IntegrityError
 from nba_api.stats.endpoints import playbyplayv2, boxscoretraditionalv3
 
 from rest_api.models.box_score import BoxScore
@@ -13,6 +14,102 @@ from rest_api.utils.fetch_player_on_game import fetch_player_on_game, PlayersDic
 ##
 ## Fetch from nba_api
 #### 
+class BoxScoreCreateMaker():
+    def __init__(self, game_id: str, final_seconds: int, home_players: List[PlayerOnBoxScoreCreate], away_players: List[PlayerOnBoxScoreCreate]):
+        self.game_id: str = game_id
+        self.final_seconds: int = final_seconds
+        self.home_players: List[PlayerOnBoxScoreCreate] = home_players
+        self.away_players: List[PlayerOnBoxScoreCreate] = away_players
+    
+    def home_player_ids(self) -> List[int]:
+        """ホームプレイヤーの player_id 一覧を返します"""
+        return [player['player_id'] for player in self.home_players]
+    
+    def init_player(self, elapsed_seconds: int, player_id: int, is_home_player: bool) -> None:
+        """初めてコートインするプレイヤーをボックススコアに追加します."""
+        if player_id not in [player['player_id'] for player in self.home_players + self.away_players]:
+            init_player_data = PlayerOnBoxScoreCreate({
+                'player_id': player_id,
+                'box_score_data': [{
+                    'elapsed_seconds': elapsed_seconds,
+                    'is_on_court': True,
+                    'sec': 0,
+                    'pts': 0,
+                    'reb': 0,
+                    'ast': 0,
+                    'stl': 0,
+                    'blk': 0,
+                    'fg': 0,
+                    'fga': 0,
+                    'three': 0,
+                    'threea': 0,
+                    'ft': 0,
+                    'fta': 0,
+                    'oreb': 0,
+                    'dreb': 0,
+                    'to': 0,
+                    'pf': 0,
+                    'plusminus': 0,
+                }]
+            })
+            if is_home_player:
+                self.home_players.append(init_player_data)
+            else:
+                self.away_players.append(init_player_data)
+    
+    def append_box_score_data(self, elapsed_seconds: int, player_id: int, is_home_player: bool, keys: List[str], add_values: List[int]) -> None:
+        """ボックススコアにデータを追加します.  
+        keys と add_values のインデックスはそろえてください."""
+        self.init_player(elapsed_seconds, player_id, is_home_player)
+        players = self.home_players if is_home_player else self.away_players
+        for player in players:
+            if player['player_id'] == player_id:
+                new_data = copy.deepcopy(player['box_score_data'][-1])
+                new_data['elapsed_seconds'] = elapsed_seconds
+                for i, key in enumerate(keys):
+                    new_data[key] += add_values[i]
+                player['box_score_data'].append(new_data)
+    
+    def players_to_bench(self, last_elapsed_seconds: int, elapsed_seconds: int, player_ids: List[int], is_home_player: bool) -> None:
+        """player_ids で指定した選手一覧をベンチに移動させます.  
+        プレイヤーの初期追加が未実施の場合は実施します."""
+        for player_id in player_ids:
+            self.init_player(last_elapsed_seconds, player_id, is_home_player)
+        players = self.home_players if is_home_player else self.away_players
+        for player in players:
+            if player['player_id'] in player_ids:
+                data = player['box_score_data']
+                data.append(data[-1])
+                data[-1]['elapsed_seconds'] = elapsed_seconds
+                data[-1]['is_on_court'] = False
+    
+    def players_to_court(self, last_elapsed_seconds: int, elapsed_seconds: int, player_ids: List[int], is_home_player: bool) -> None:
+        """player_ids で指定した選手一覧をコートに移動させます.  
+        プレイヤーの初期追加が未実施の場合は実施します."""
+        for player_id in player_ids:
+            self.init_player(last_elapsed_seconds, player_id, is_home_player)
+        players = self.home_players if is_home_player else self.away_players
+        for player in players:
+            if player['player_id'] in player_ids:
+                data = player['box_score_data']
+                data = player['box_score_data']
+                data.append(data[-1])
+                data[-1]['elapsed_seconds'] = last_elapsed_seconds
+                data[-1]['is_on_court'] = True
+                data.append(data[-1])
+                data[-1]['elapsed_seconds'] = elapsed_seconds
+                data[-1]['is_on_court'] = True
+    
+    def to_box_score_create(self) -> BoxScoreCreate:
+        """BoxScoreCreate クラスを生成します."""
+        return BoxScoreCreate({
+            'game_id': self.game_id,
+            'final_seconds': self.final_seconds,
+            'home_players': self.home_players,
+            'away_players': self.away_players
+        })
+
+
 def fetch_box_scores(game_ids: List[str]) -> List[BoxScoreCreate]:
     """指定の game_id の PlayByPlay を nba_api から取得し、BoxScoreCreate クラスを生成します."""
     box_score_creates: List[BoxScoreCreate] = []
@@ -33,17 +130,12 @@ def _convert_play_by_play_to_box_score_create(
     on_court_away_player_ids = [players_info['away_players'][i]['player_id'] for i in range(5)]
     last_score = '0 - 0'
     last_elapsed_seconds = 0
-    box_score_create = BoxScoreCreate({
-        'game_id': game_id,
-        'final_seconds': 0,
-        'home_players': [],
-        'away_players': [],
-    })
+    box_score_create_maker = BoxScoreCreateMaker(game_id, 0, [], [])
     # スターターをボックススコアに登録
     for home_player_id in on_court_home_player_ids:
-        box_score_create['home_players'].append(_init_player(0, home_player_id))
+        box_score_create_maker.init_player(0, home_player_id, True)
     for away_player_id in on_court_away_player_ids:
-        box_score_create['away_players'].append(_init_player(0, away_player_id))
+        box_score_create_maker.init_player(0, away_player_id, False)
 
     change_period_flag = False
     for one_play in play_by_play.itertuples():
@@ -63,44 +155,13 @@ def _convert_play_by_play_to_box_score_create(
             )
             # box_score_create に交代を反映
             to_bench_home = list(set(on_court_home_player_ids) - set(on_court_player_ids['home']))
+            box_score_create_maker.players_to_bench(last_elapsed_seconds, elapsed_seconds, to_bench_home, True)
             to_bench_away = list(set(on_court_away_player_ids) - set(on_court_player_ids['away']))
+            box_score_create_maker.players_to_bench(last_elapsed_seconds, elapsed_seconds, to_bench_away, False)
             to_court_home = list(set(on_court_player_ids['home']) - set(on_court_home_player_ids))
+            box_score_create_maker.players_to_court(last_elapsed_seconds, elapsed_seconds, to_court_home, True)
             to_court_away = list(set(on_court_player_ids['away']) - set(on_court_away_player_ids))
-            for player in box_score_create['home_players'] + box_score_create['away_players']:
-                player_id = player['player_id']
-                data = player['box_score_data']
-                if player_id in to_bench_home + to_bench_away:
-                    data.append(data[-1])
-                    data[-1]['elapsed_seconds'] = elapsed_seconds
-                    data[-1]['is_on_court'] = False
-                if player_id in to_court_home:
-                    data.append(data[-1])
-                    data[-1]['elapsed_seconds'] = last_elapsed_seconds
-                    data[-1]['is_on_court'] = True
-                    data.append(data[-1])
-                    data[-1]['elapsed_seconds'] = elapsed_seconds
-                    data[-1]['is_on_court'] = True
-                    to_court_home.remove(player_id)
-                if player_id in to_court_away:
-                    data.append(data[-1])
-                    data[-1]['elapsed_seconds'] = last_elapsed_seconds
-                    data[-1]['is_on_court'] = True
-                    data.append(data[-1])
-                    data[-1]['elapsed_seconds'] = elapsed_seconds
-                    data[-1]['is_on_court'] = True
-                    to_court_away.remove(player_id)
-            for player_id in to_court_home:
-                box_score_create['home_players'].append(_init_player(last_elapsed_seconds, player_id))
-                initialized_player_data = box_score_create['home_players'][-1]['box_score_data']
-                initialized_player_data.append(initialized_player_data[-1])
-                initialized_player_data[-1]['elapsed_seconds'] = elapsed_seconds
-                initialized_player_data[-1]['is_on_court'] = True
-            for player_id in to_court_away:
-                box_score_create['away_players'].append(_init_player(last_elapsed_seconds, player_id))
-                initialized_player_data = box_score_create['away_players'][-1]['box_score_data']
-                initialized_player_data.append(initialized_player_data[-1])
-                initialized_player_data[-1]['elapsed_seconds'] = elapsed_seconds
-                initialized_player_data[-1]['is_on_court'] = True
+            box_score_create_maker.players_to_court(last_elapsed_seconds, elapsed_seconds, to_court_away, False)
             # 交代処理が完了したので、データの更新
             on_court_home_player_ids = on_court_player_ids['home']
             on_court_away_player_ids = on_court_player_ids['away']
@@ -108,8 +169,7 @@ def _convert_play_by_play_to_box_score_create(
         # 出場中の選手の出場時間を加算
         # nba_api （裏のAPI側）のバグでオンコートプレイヤーが不正確なため、不正確
         for on_court_home_player_id in on_court_home_player_ids:
-            box_score_create = _append_box_score_data(
-                box_score_create,
+            box_score_create_maker.append_box_score_data(
                 elapsed_seconds,
                 on_court_home_player_id,
                 True,
@@ -117,8 +177,7 @@ def _convert_play_by_play_to_box_score_create(
                 [elapsed_seconds_diff]
             )
         for on_court_away_player_id in on_court_away_player_ids:
-            box_score_create = _append_box_score_data(
-                box_score_create,
+            box_score_create_maker.append_box_score_data(
                 elapsed_seconds,
                 on_court_away_player_id,
                 False,
@@ -127,12 +186,11 @@ def _convert_play_by_play_to_box_score_create(
             )
         # 1プレイを分類し、関連する選手のボックススコアを更新
         score_diff = _calc_score_diff(one_play.SCORE, last_score)
-        is_home_player = one_play.PLAYER1_ID in [player['player_id'] for player in box_score_create['home_players']]
+        is_home_player = one_play.PLAYER1_ID in box_score_create_maker.home_player_ids()
         match one_play.EVENTMSGTYPE:
             # フィールドゴール成功
             case 1:
-                box_score_create = _append_box_score_data(
-                    box_score_create,
+                box_score_create_maker.append_box_score_data(
                     elapsed_seconds,
                     one_play.PLAYER1_ID,
                     is_home_player,
@@ -140,8 +198,7 @@ def _convert_play_by_play_to_box_score_create(
                     [score_diff, 1, 1, score_diff-2, score_diff-2]
                 )
                 if one_play.PLAYER2_ID != 0:
-                    box_score_create = _append_box_score_data(
-                        box_score_create,
+                    box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         one_play.PLAYER2_ID,
                         is_home_player,
@@ -150,8 +207,7 @@ def _convert_play_by_play_to_box_score_create(
                     )
                 # nba_api （裏のAPI側）のバグでオンコートプレイヤーが不正確のため、不正確
                 for on_court_home_player_id in on_court_home_player_ids:
-                    box_score_create = _append_box_score_data(
-                        box_score_create,
+                    box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_home_player_id,
                         is_home_player,
@@ -159,8 +215,7 @@ def _convert_play_by_play_to_box_score_create(
                         [score_diff if is_home_player else -score_diff],
                     )
                 for on_court_away_player_id in on_court_away_player_ids:
-                    box_score_create = _append_box_score_data(
-                        box_score_create,
+                    box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_away_player_id,
                         not is_home_player,
@@ -169,8 +224,7 @@ def _convert_play_by_play_to_box_score_create(
                     )
             # フィールドゴール失敗
             case 2:
-                box_score_create = _append_box_score_data(
-                    box_score_create,
+                box_score_create_maker.append_box_score_data(
                     elapsed_seconds,
                     one_play.PLAYER1_ID,
                     is_home_player,
@@ -178,8 +232,7 @@ def _convert_play_by_play_to_box_score_create(
                     [1, 1 if _contains_3pt(one_play.HOMEDESCRIPTION, one_play.VISITORDESCRIPTION) else 0]
                 )
                 if one_play.PLAYER3_ID != 0:
-                    box_score_create = _append_box_score_data(
-                        box_score_create,
+                    box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         one_play.PLAYER3_ID,
                         not is_home_player,
@@ -188,8 +241,7 @@ def _convert_play_by_play_to_box_score_create(
                     )
             # フリースロー試投
             case 3:
-                box_score_create = _append_box_score_data(
-                    box_score_create,
+                box_score_create_maker.append_box_score_data(
                     elapsed_seconds,
                     one_play.PLAYER1_ID,
                     is_home_player,
@@ -198,8 +250,7 @@ def _convert_play_by_play_to_box_score_create(
                 )
                 # nba_api （裏のAPI側）のバグでオンコートプレイヤーが不正確なため、不正確
                 for on_court_home_player_id in on_court_home_player_ids:
-                    box_score_create = _append_box_score_data(
-                        box_score_create,
+                    box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_home_player_id,
                         is_home_player,
@@ -207,8 +258,7 @@ def _convert_play_by_play_to_box_score_create(
                         [score_diff if is_home_player else -score_diff],
                     )
                 for on_court_away_player_id in on_court_away_player_ids:
-                    box_score_create = _append_box_score_data(
-                        box_score_create,
+                    box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_away_player_id,
                         not is_home_player,
@@ -218,12 +268,12 @@ def _convert_play_by_play_to_box_score_create(
             # リバウンド獲得
             case 4:
                 comulative_reb = _extract_off_def(one_play.HOMEDESCRIPTION, one_play.VISITORDESCRIPTION)
-                for player in box_score_create['home_players' if is_home_player else 'away_players']:
+                players = box_score_create_maker.home_players if is_home_player else box_score_create_maker.away_players
+                for player in players:
                     if player['player_id'] == one_play.PLAYER1_ID:
                         last_dreb = player['box_score_data'][-1]['dreb']
                         last_oreb = player['box_score_data'][-1]['oreb']
-                        box_score_create = _append_box_score_data(
-                            box_score_create,
+                        box_score_create_maker.append_box_score_data(
                             elapsed_seconds,
                             one_play.PLAYER1_ID,
                             is_home_player,
@@ -232,8 +282,7 @@ def _convert_play_by_play_to_box_score_create(
                         )
             # ターンオーバー
             case 5:
-                box_score_create = _append_box_score_data(
-                    box_score_create,
+                box_score_create_maker.append_box_score_data(
                     elapsed_seconds,
                     one_play.PLAYER1_ID,
                     is_home_player,
@@ -241,8 +290,7 @@ def _convert_play_by_play_to_box_score_create(
                     [1]
                 )
                 if one_play.PLAYER2_ID != 0:
-                    box_score_create = _append_box_score_data(
-                        box_score_create,
+                    box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         one_play.PLAYER2_ID,
                         not is_home_player,
@@ -251,8 +299,7 @@ def _convert_play_by_play_to_box_score_create(
                     )
             # ファウル
             case 6:
-                box_score_create = _append_box_score_data(
-                    box_score_create,
+                box_score_create_maker.append_box_score_data(
                     elapsed_seconds,
                     one_play.PLAYER1_ID,
                     is_home_player,
@@ -264,18 +311,8 @@ def _convert_play_by_play_to_box_score_create(
                 pass
             # 選手交代
             case 8:
-                players = box_score_create['home_players' if is_home_player else 'away_players']
-                for player in players:
-                    if player['player_id'] == one_play.PLAYER1_ID:
-                        player['box_score_data'].append(player['box_score_data'][-1])
-                        player['box_score_data'][-1]['elapsed_seconds'] = elapsed_seconds
-                        player['box_score_data'][-1]['is_on_court'] = False
-                    if player['player_id'] == one_play.PLAYER2_ID:
-                        player['box_score_data'].append(player['box_score_data'][-1])
-                        player['box_score_data'][-1]['elapsed_seconds'] = elapsed_seconds
-                        player['box_score_data'][-1]['is_on_court'] = True
-                if len([player for player in players if player['player_id'] == one_play.PLAYER2_ID]) == 0:
-                    box_score_create['home_players' if is_home_player else 'away_players'].append(_init_player(elapsed_seconds, one_play.PLAYER2_ID))
+                box_score_create_maker.players_to_bench(last_elapsed_seconds, elapsed_seconds, [one_play.PLAYER1_ID], is_home_player)
+                box_score_create_maker.players_to_court(last_elapsed_seconds, elapsed_seconds, [one_play.PLAYER2_ID], is_home_player)
                 if is_home_player:
                     if one_play.PLAYER1_ID in on_court_home_player_ids:
                         on_court_home_player_ids.remove(one_play.PLAYER1_ID)
@@ -305,36 +342,8 @@ def _convert_play_by_play_to_box_score_create(
         last_elapsed_seconds = elapsed_seconds
         if score_diff != 0:
             last_score = one_play.SCORE
-    box_score_create['final_seconds'] = last_elapsed_seconds
-    return box_score_create
-
-
-def _init_player(elapsed_seconds: int, player_id: int) -> PlayerOnBoxScoreCreate:
-    """初めてコートインするプレイヤーをボックススコアに追加します."""
-    return {
-        'player_id': player_id,
-        'box_score_data': [{
-            'elapsed_seconds': elapsed_seconds,
-            'is_on_court': True,
-            'sec': 0,
-            'pts': 0,
-            'reb': 0,
-            'ast': 0,
-            'stl': 0,
-            'blk': 0,
-            'fg': 0,
-            'fga': 0,
-            'three': 0,
-            'threea': 0,
-            'ft': 0,
-            'fta': 0,
-            'oreb': 0,
-            'dreb': 0,
-            'to': 0,
-            'pf': 0,
-            'plusminus': 0,
-        }]
-    }
+    box_score_create_maker.final_seconds = last_elapsed_seconds
+    return box_score_create_maker.to_box_score_create()
 
 
 def _get_elapsed_seconds(quarter: int, game_clock: str) -> int:
@@ -367,27 +376,6 @@ def _calc_score_diff(score1: str, score2: str) -> int:
     away2, home2 = _extract_away_home(score2)
 
     return abs((away2 + home2) - (away1 + home1))
-
-
-def _append_box_score_data(
-        box_score_create: BoxScoreCreate,
-        elapsed_seconds: int,
-        player_id: int,
-        is_home_player: bool,
-        keys: List[str],
-        add_values: List[int]
-    ) -> None:
-    """ボックススコアにデータを追加します.  
-    keys と add_values のインデックスはそろえてください."""
-    result = copy.deepcopy(box_score_create)
-    for player in result['home_players'] + result['away_players']:
-        if player['player_id'] == player_id:
-            new_data = copy.deepcopy(player['box_score_data'][-1])
-            new_data['elapsed_seconds'] = elapsed_seconds
-            for i, key in enumerate(keys):
-                new_data[key] += add_values[i]
-            player['box_score_data'].append(new_data)
-    return result
 
 
 def _contains_3pt(str1: str | None, str2: str | None) -> bool:
@@ -535,16 +523,17 @@ def upsert_box_score(box_score_create: BoxScoreCreate):
     """指定の game_id の BoxScore が、なければ新規作成、あれば更新します."""
 
     game_id = box_score_create.get("game_id")
+    if not game_id:
+        raise ValueError("Game ID is not set")
 
-    if game_id:
-        if BoxScore.objects.filter(game_id=game_id).exists():
-            instance = BoxScore.objects.get(game_id=game_id)
-        else:
-            instance = None
-        serializer = BoxScoreSerializer(instance=instance, data=box_score_create)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            raise ValueError(serializer.errors)
-    else:
-        raise ValueError('Game ID is not set')
+    try:
+        with transaction.atomic():
+            instance = BoxScore.objects.filter(game_id=game_id).first()
+            serializer = BoxScoreSerializer(instance=instance, data=box_score_create)
+
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+    except IntegrityError as e:
+        raise ValueError(f"DB制約違反: {e}")
+    except ValueError as ve:
+        raise ve 
