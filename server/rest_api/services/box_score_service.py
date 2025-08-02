@@ -356,15 +356,15 @@ def _calc_score_diff(score1: str, score2: str) -> int:
     """スコアの文字列から得点差を返します."""
     if score1 == None or score2 == None:
         return 0
-    def extract_away_home(score: str) -> tuple[int, int]:
+    def _extract_away_home(score: str) -> tuple[int, int]:
         match = re.match(r"(\d{1,3})\s*-\s*(\d{1,3})", score)
         if not match:
             raise ValueError(f"Invalid score format: {score}")
         away, home = match.groups()
         return int(away), int(home)
 
-    away1, home1 = extract_away_home(score1)
-    away2, home2 = extract_away_home(score2)
+    away1, home1 = _extract_away_home(score1)
+    away2, home2 = _extract_away_home(score2)
 
     return abs((away2 + home2) - (away1 + home1))
 
@@ -522,7 +522,10 @@ def _update_on_court_player_id(
 
 def _convert_clock_to_seconds(clock: str) -> int:
     """ゲームクロックの文字列を秒数に変換します."""
-    minutes, seconds = map(int, clock.split(":"))
+    try:
+        minutes, seconds = map(int, clock.split(":"))
+    except:
+        return 0
     return minutes * 60 + seconds
 
 ##

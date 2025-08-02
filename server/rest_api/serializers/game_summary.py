@@ -52,6 +52,7 @@ class PlayerOnGameSerializer(serializers.ModelSerializer):
 class GameSummarySerializer(serializers.ModelSerializer):
     home_players = PlayerOnGameSerializer(many=True, source='home_players_on_game')
     away_players = PlayerOnGameSerializer(many=True, source='away_players_on_game')
+    game_category = serializers.SerializerMethodField()
     home_team = TeamSerializer(read_only=True)
     away_team = TeamSerializer(read_only=True)
     home_team_id = serializers.PrimaryKeyRelatedField(
@@ -64,6 +65,9 @@ class GameSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = GameSummary
         fields = '__all__'
+    
+    def get_game_category(self, obj):
+        return obj.game_category
 
     def create(self, validated_data):
         home_players_data = validated_data.pop('home_players_on_game', [])

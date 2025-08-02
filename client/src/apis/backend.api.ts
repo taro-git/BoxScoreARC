@@ -1,13 +1,13 @@
 import axios, { AxiosError } from 'axios'
-import { API_BASE_URL } from '../appEnv'
+import { REST_API_BASE_URL } from '../appEnv'
 
 export class BackendApi {
-    protected path: string = ''
+    protected path: string = '/'
 
     protected setPath(path: string) {
         let collectedPath = path
-        if (path.endsWith('/')) {
-            collectedPath = path.slice(0, -1)
+        if (!path.endsWith('/')) {
+            collectedPath = path + '/'
         }
         if (!collectedPath.startsWith('/')) {
             collectedPath = '/' + collectedPath
@@ -16,7 +16,7 @@ export class BackendApi {
     }
 
     protected async get(params?: object, isValid?: (responseData: any) => boolean) {
-        const responseData = (await axios.get(API_BASE_URL + this.path, { params })).data
+        const responseData = (await axios.get(REST_API_BASE_URL + this.path, { params })).data
         if (isValid) {
             if (isValid(responseData)) {
                 return responseData
@@ -29,10 +29,10 @@ export class BackendApi {
     }
 
     protected async post(data?: object) {
-        return (await axios.post(API_BASE_URL + this.path, data ?? {})).data
+        return (await axios.post(REST_API_BASE_URL + this.path, data ?? {})).data
     }
 
     protected async delete(params?: object) {
-        return (await axios.delete(API_BASE_URL + this.path, { params })).data
+        return (await axios.delete(REST_API_BASE_URL + this.path, { params })).data
     }
 }

@@ -27,7 +27,8 @@ class BoxScoreViewSet(viewsets.ModelViewSet):
                 box_scores_creates = fetch_box_scores([game_id])
                 upsert_box_score(box_scores_creates[0])
                 instance = BoxScore.objects.get(game_id=game_id)
-            except:
+            except Exception as e:
+                print(e)
                 instance = None
         if instance:
             return Response(self.get_serializer(instance).data)

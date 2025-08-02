@@ -11,12 +11,12 @@
                 </v-speed-dial>
             </template>
             <img v-if="selectedItemRouteName === ROUTE_NAMES.GAME" class="mr-5" :style="{ 'width': '2.5rem' }"
-                :src="gameSummary.away_logo" />
+                :src="gameSummary.awayTeam.logo" />
             <span v-if="selectedItemRouteName === ROUTE_NAMES.GAME" class="text-h5">
-                {{ gameSummary.away_score }} - {{ gameSummary.home_score }}
+                {{ gameSummary.awayScore }} - {{ gameSummary.homeScore }}
             </span>
             <img v-if="selectedItemRouteName === ROUTE_NAMES.GAME" class="ml-5" :style="{ 'width': '2.5rem' }"
-                :src="gameSummary.home_logo" />
+                :src="gameSummary.homeTeam.logo" />
             <v-app-bar-title v-else>{{ selectedItemTitle }}</v-app-bar-title>
             <template v-slot:append>
                 <v-btn icon @click="dialog = true">
@@ -51,11 +51,11 @@ import { useRouter, useRoute } from 'vue-router'
 import Settings from './components/Settings.vue'
 import { baseToAccent, baseToDarken, baseToLighten, type RgbaColor } from './core/colorControl'
 import { ROUTE_NAMES } from './router'
-import { gameSummaryStore } from './store/gameSummary'
+import { gameStore } from './store/game'
 import { settingsStore } from './store/settings'
 
 const open = ref(false)
-const gameSummary = gameSummaryStore()
+const gameSummary = gameStore().gameSummary
 const appBarTitles = computed(() => {
     return {
         [ROUTE_NAMES.HOME]: 'Home',

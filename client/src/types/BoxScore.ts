@@ -27,48 +27,86 @@ export const BOX_SCORE_COLUMNS: Record<BoxScoreColumnKeys, string> = {
     plusminus: '+/-'
 }
 
-export interface BoxScoreRawData {
-    [key: number]: Array<[number, number[]]>
-}
-
-export interface BoxScoreData {
+export interface BoxScoreTableData {
     [key: number]: number[]
 }
 
-export interface BoxScoreRow {
-    player_id: number
-    player_name: string
-    jersey: string
-    pos: string
-    is_inactive: boolean
-    comulative_boxscore: number[]
+type boxScoreData = [
+    /** elapsedSeconds */
+    number,
+    /** isOnCourt */
+    boolean,
+    /** min */
+    number,
+    /** pts */
+    number,
+    /** reb */
+    number,
+    /** ast */
+    number,
+    /** stl */
+    number,
+    /** blk */
+    number,
+    /** fg */
+    number,
+    /** fga */
+    number,
+    /** three */
+    number,
+    /** threea */
+    number,
+    /** ft */
+    number,
+    /** fta */
+    number,
+    /** oreb */
+    number,
+    /** dreb */
+    number,
+    /** to */
+    number,
+    /** pf */
+    number,
+    /** eff */
+    number,
+    /** plusminus */
+    number,
+]
+
+interface PlayerOnBoxScore {
+    playerId: number
+    boxScoreData: boxScoreData[]
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isBoxScoreRawData = (item: any) => {
-    if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-        return false;
+export interface IBoxScore {
+    gameId: string
+    finalPeriod: number
+    boxScoreDataHeader: string[]
+    homePlayers: PlayerOnBoxScore[]
+    awayPlayers: PlayerOnBoxScore[]
+}
+
+export class BoxScore {
+    gameId: string
+    finalPeriod: number
+    homePlayers: PlayerOnBoxScore[]
+    awayPlayers: PlayerOnBoxScore[]
+
+    constructor(data?: IBoxScore) {
+        this.gameId = data?.gameId ?? ''
+        this.finalPeriod = data?.finalPeriod ?? 4
+        this.homePlayers = data?.homePlayers ?? []
+        this.awayPlayers = data?.awayPlayers ?? []
     }
+}
 
-    for (const key in item) {
-        if (isNaN(Number(key))) return false;
-
-        const value = item[key];
-        if (!Array.isArray(value)) return false;
-
-        for (const tuple of value) {
-            if (
-                !Array.isArray(tuple) ||
-                tuple.length !== 2 ||
-                typeof tuple[0] !== 'number' ||
-                !Array.isArray(tuple[1]) ||
-                !tuple[1].every((n) => typeof n === 'number')
-            ) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-};
+export interface BoxScoreRow {
+    playerId: number
+    playerName: string
+    jersey: string
+    pos: string
+    isInactive: boolean
+    comulativeBoxscore: number[]
+}
 

@@ -30,19 +30,19 @@
                         <th class="top-row-3" :colspan="BOX_SCORE_COLUMN_KEYS.length">
                         </th>
                     </template>
-                    <template v-else-if="!row.is_inactive">
+                    <template v-else-if="!row.isInactive">
                         <th :class="['left1-data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]">
                             {{ `#${row.jersey}` }}
                         </th>
                         <th :class="['left2-data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]">
-                            {{ row.player_name }}
+                            {{ row.playerName }}
                         </th>
 
                         <td :class="['data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]">
                             {{ row.pos }}
                         </td>
                         <td :class="['data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]"
-                            v-for="(cell, colIndex) in row.comulative_boxscore"
+                            v-for="(cell, colIndex) in row.comulativeBoxscore"
                             :key="'cell-' + rowIndex + '-' + colIndex">
                             <template v-if="colIndex == 8 || colIndex == 11 || colIndex == 14">
                                 {{ `${cell}%` }}
@@ -57,7 +57,7 @@
                             {{ `#${row.jersey}` }}
                         </th>
                         <th :class="['left2-data', 'inactive']">
-                            {{ `${row.player_name} is inactive` }}
+                            {{ `${row.playerName} is inactive` }}
                         </th>
                         <th :class="'inactive'" :colspan="BOX_SCORE_COLUMN_KEYS.length">
                         </th>
@@ -70,43 +70,52 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BOX_SCORE_COLUMN_KEYS, BOX_SCORE_COLUMNS, type BoxScoreData, type BoxScoreRow } from '../types/BoxScore'
-import { type BoxScoreSummary, type Player } from '../types/BoxScoreSummary';
+import { BOX_SCORE_COLUMN_KEYS, BOX_SCORE_COLUMNS, type BoxScoreTableData, type BoxScoreRow } from '../types/BoxScore'
+import { GameSummary, type Player } from '../types/GameSummary';
 
 const props = defineProps<{
-    boxScoreSummary: BoxScoreSummary
-    boxScoreData: BoxScoreData
+    gameSummary: GameSummary
+    data: BoxScoreTableData
     selectedTeam: string
     gameClockRange: number[]
 }>()
 
 const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {
+    players.sort((a, b) => {
+        if (a.isStarter !== b.isStarter) {
+            return a.isStarter ? -1 : 1
+        }
+        if (a.isInactive !== b.isInactive) {
+            return a.isInactive ? 1 : -1
+        }
+        return a.sequence - b.sequence
+    })
     let boxScoreRows = players.map((player) => ({
-        player_id: player.player_id,
-        player_name: player.name,
+        playerId: player.playerId,
+        playerName: player.name,
         jersey: player.jersey,
         pos: player.position,
-        is_inactive: player.is_inactive,
-        comulative_boxscore: props.boxScoreData[player.player_id] ?? []
+        isInactive: player.isInactive,
+        comulativeBoxscore: props.data[player.playerId] ?? []
     }))
     boxScoreRows.splice(5, 0, {
-        player_id: 0,
-        player_name: 'no data',
+        playerId: 0,
+        playerName: 'no data',
         jersey: '',
         pos: '',
-        is_inactive: false,
-        comulative_boxscore: []
+        isInactive: false,
+        comulativeBoxscore: []
     })
     return boxScoreRows
 }
 
 const boxScore = computed(() => ({
-    home: convertPlayersToBoxScore(props.boxScoreSummary.home.players),
-    away: convertPlayersToBoxScore(props.boxScoreSummary.away.players)
+    home: convertPlayersToBoxScore(props.gameSummary.homePlayers),
+    away: convertPlayersToBoxScore(props.gameSummary.awayPlayers)
 }))
 
 const rows = computed(() => {
-    return props.selectedTeam === 'home' ? boxScore.value.home : boxScore.value.away
+    return props.selectedTeam === 'homeTeam' ? boxScore.value.home : boxScore.value.away
 })
 
 </script>

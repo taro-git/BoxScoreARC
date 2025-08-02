@@ -49,7 +49,7 @@ const emit = defineEmits<{
 }>()
 
 const selectedMonth = computed(() =>
-    `${props.selectedDate.getFullYear()}/${props.selectedDate.getMonth() + 1}`
+    `${new Date(props.selectedDate).getFullYear()}/${new Date(props.selectedDate).getMonth() + 1}`
 )
 
 const dialog = ref(false)
@@ -57,7 +57,7 @@ const dialog = ref(false)
 const dates = ref<Date[]>([])
 const generateDates = (centerDate: Date) => {
     const start = new Date(centerDate)
-    start.setDate(centerDate.getDate() - 30)
+    start.setDate(new Date(centerDate).getDate() - 30)
     const newDates: Date[] = []
     for (let i = 0; i <= 60; i++) {
         const d = new Date(start)
@@ -70,7 +70,7 @@ watch(() => props.selectedDate, (newDate) => {
     generateDates(newDate)
 }, { immediate: true })
 const isSelected = (date: Date) =>
-    date.toDateString() === props.selectedDate.toDateString()
+    date.toDateString() === new Date(props.selectedDate).toDateString()
 const isToday = (date: Date) => {
     const now = new Date()
     return date.getFullYear() === now.getFullYear() &&
@@ -78,7 +78,7 @@ const isToday = (date: Date) => {
         date.getDate() === now.getDate()
 }
 const selectedDateString = computed({
-    get: () => props.selectedDate.toDateString(),
+    get: () => new Date(props.selectedDate).toDateString(),
     set: (val: string) => {
         const date = new Date(val)
         if (!isNaN(date.getTime())) {

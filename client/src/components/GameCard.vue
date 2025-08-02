@@ -1,19 +1,19 @@
 <template>
     <div :style="{ 'background-color': 'white' }">
-        <router-link :to="{ name: 'game', params: { gameId: gameSummary.game_id } }" class="card" @click="selectGame">
-            <div class="status">{{ gameSummary.status_text }}</div>
-            <div v-if="fullView" class="category">{{ gameSummary.game_category }}</div>
+        <router-link :to="{ name: 'game', params: { gameId: gameSummary.gameId } }" class="card" @click="selectGame">
+            <div class="status">{{ gameSummary.statusText }}</div>
+            <div v-if="fullView" class="category">{{ gameSummary.gameCategory }}</div>
             <div class="teams">
                 <div class="team">
-                    <img :src="gameSummary.away_logo" width="50" />
-                    <div v-if="fullView">{{ gameSummary.away_team }}</div>
+                    <img :src="gameSummary.awayTeam.logo" width="50" />
+                    <div v-if="fullView">{{ gameSummary.awayTeam.abbreviation }}</div>
                 </div>
-                <div v-if="scoreDisplay" class="score">{{ gameSummary.away_score ?? 0 }}</div>
+                <div v-if="scoreDisplay" class="score">{{ gameSummary.awayScore ?? 0 }}</div>
                 <div class="vs">-</div>
-                <div v-if="scoreDisplay" class="score">{{ gameSummary.home_score ?? 0 }}</div>
+                <div v-if="scoreDisplay" class="score">{{ gameSummary.homeScore ?? 0 }}</div>
                 <div class="team">
-                    <img :src="gameSummary.home_logo" width="50" />
-                    <div v-if="fullView">{{ gameSummary.home_team }}</div>
+                    <img :src="gameSummary.homeTeam.logo" width="50" />
+                    <div v-if="fullView">{{ gameSummary.homeTeam.abbreviation }}</div>
                 </div>
             </div>
         </router-link>
@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
 
-import { gameSummaryStore } from '../store/gameSummary';
+import { gameStore } from '../store/game';
 
 import { GameSummary } from '../types/GameSummary';
 
@@ -33,10 +33,10 @@ const props = defineProps<{
     fullView: boolean
 }>()
 
-const selectedGameSummary = gameSummaryStore()
+const selectedGame = gameStore()
 
 const selectGame = () => {
-    Object.assign(selectedGameSummary, props.gameSummary)
+    Object.assign(selectedGame.gameSummary, props.gameSummary)
 }
 
 </script>

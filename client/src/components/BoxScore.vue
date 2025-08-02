@@ -2,13 +2,13 @@
     <v-sheet class="bg-base hide-scroll d-flex flex-column fill-height">
         <v-btn-toggle v-model="selectedTeam" color="accent" class="justify-center" mandatory>
             <v-col v-for="team in teams" cols="5" class="pa-0">
-                <v-btn :value="team" class="bg-darken w-100">{{ boxScoreSummary[team].abbreviation }}</v-btn>
+                <v-btn :value="team" class="bg-darken w-100">{{ gameSummary[team].abbreviation }}</v-btn>
             </v-col>
         </v-btn-toggle>
         <v-skeleton-loader elevation="7" :loading="isLoading" color="lighten" type="table-row@12">
             <v-responsive class="elevation-7 rounded fill-height">
-                <box-score-table :box-score-summary="boxScoreSummary" :box-score-data="boxScoreData"
-                    :selected-team="selectedTeam" :game-clock-range="gameClockRange" />
+                <box-score-table :game-summary="gameSummary" :data="boxScoreTableData" :selected-team="selectedTeam"
+                    :game-clock-range="gameClockRange" />
             </v-responsive>
         </v-skeleton-loader>
     </v-sheet>
@@ -17,13 +17,12 @@
 <script setup lang="ts">
 import { computed, defineProps, ref, watch } from 'vue'
 
-import { BoxScoreRawDataApi } from '../apis/boxScoreRawData';
-import { BoxScoreSummaryApi } from '../apis/boxScoreSummary';
+import { BoxScoreApi } from '../apis/boxScore.api';
+import { GameSummariesApi } from '../apis/gameSummaries.api';
 import BoxScoreTable from './BoxScoreTable.vue';
 import { updateBoxScoreData } from '../core/boxScoreData';
-import { gameSummaryStore } from '../store/gameSummary';
-import { BOX_SCORE_COLUMN_KEYS, type BoxScoreData, type BoxScoreRawData, isBoxScoreRawData } from '../types/BoxScore'
-import { BoxScoreSummary, isBoxScoreSummary } from '../types/BoxScoreSummary';
+import { gameStore } from '../store/game';
+import { BOX_SCORE_COLUMN_KEYS, BoxScore, type BoxScoreTableData } from '../types/BoxScore'
 import { Cache } from '../core/cache';
 
 const props = defineProps<{
@@ -31,57 +30,51 @@ const props = defineProps<{
     gameClockRange: number[]
 }>()
 
-const teams = ['away', 'home'] as const
+const teams = ['awayTeam', 'homeTeam'] as const
 type Teams = typeof teams[number]
-const selectedTeam = ref<Teams>('away')
+const selectedTeam = ref<Teams>('awayTeam')
 
-const gameSummary = gameSummaryStore()
-gameSummary.away_score = 0
-gameSummary.home_score = 0
+const game = gameStore()
+const gameSummary = game.gameSummary
+gameSummary.awayScore = 0
+gameSummary.homeScore = 0
 watch(props.gameClockRange, ([startRange, endRange]) => {
-    boxScoreData.value = updateBoxScoreData(boxScoreData.value, boxScoreRawData.value, startRange, endRange)
-    gameSummary.away_score = boxScoreSummary.value.away.players.filter(player => !player.is_inactive).map(player => player.player_id)
-        .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
-    gameSummary.home_score = boxScoreSummary.value.home.players.filter(player => !player.is_inactive).map(player => player.player_id)
-        .reduce((total_pts, player_id) => total_pts + boxScoreData.value[player_id][1], 0)
+    boxScoreTableData.value = updateBoxScoreData(boxScoreTableData.value, boxScore.value, startRange, endRange)
+    gameSummary.awayScore = gameSummary.awayPlayers.filter(player => !player.isInactive).map(player => player.playerId)
+        .reduce((totalPts, playerId) => totalPts + boxScoreTableData.value[playerId][1], 0)
+    gameSummary.homeScore = gameSummary.homePlayers.filter(player => !player.isInactive).map(player => player.playerId)
+        .reduce((totalPts, playerId) => totalPts + boxScoreTableData.value[playerId][1], 0)
 })
 
-const boxScoreSummaryLoading = ref(true)
+const gameSummaryLoading = ref(true)
 const boxScoreDataLoading = ref(true)
-const isLoading = computed(() => boxScoreSummaryLoading.value || boxScoreDataLoading.value)
+const isLoading = computed(() => gameSummaryLoading.value || boxScoreDataLoading.value)
 
-const boxScoreSummarycacheService = new Cache<BoxScoreSummary>({
-    ttlSeconds: 900,
-    maxItems: 10,
-    cacheFilter: (_, data: unknown): data is BoxScoreSummary => isBoxScoreSummary(data),
-})
-
-const boxScoreSummary = ref<BoxScoreSummary>(new BoxScoreSummary())
-
-const boxScoreData = ref<BoxScoreData>({})
-const boxScoreSummaryApi = new BoxScoreSummaryApi()
-boxScoreSummarycacheService.getOrFetch(Number(props.gameId), () => boxScoreSummaryApi.getBoxScoreSummary(props.gameId))
+const boxScoreTableData = ref<BoxScoreTableData>({})
+const gameSummariesApi = new GameSummariesApi()
+gameSummariesApi.getGameSummaryByGameId(props.gameId)
     .then((response) => {
-        boxScoreSummary.value = response
-        gameSummary.away_logo = response.away.logo
-        gameSummary.home_logo = response.home.logo
-        const players = [...response.home.players, ...response.away.players]
+        gameSummary.awayTeam = response.awayTeam
+        gameSummary.homeTeam = response.homeTeam
+        gameSummary.awayPlayers = response.awayPlayers
+        gameSummary.homePlayers = response.homePlayers
+        const players = [...response.homePlayers, ...response.awayPlayers]
         players.forEach(player => {
-            if (!player.is_inactive) boxScoreData.value[player.player_id] = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
+            if (!player.isInactive) boxScoreTableData.value[player.playerId] = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
         })
-        boxScoreSummaryLoading.value = false
+        gameSummaryLoading.value = false
     })
 
-const boxScoreRawDatacacheService = new Cache<BoxScoreRawData>({
+const boxScoreRawDatacacheService = new Cache<BoxScore>({
     ttlSeconds: 900,
     maxItems: 5,
-    cacheFilter: (_, data: unknown): data is BoxScoreRawData => isBoxScoreRawData(data),
 })
-const boxScoreRawData = ref<BoxScoreRawData>({})
-const boxScoreRawDataApi = new BoxScoreRawDataApi()
-boxScoreRawDatacacheService.getOrFetch(Number(props.gameId), () => boxScoreRawDataApi.getBoxScoreRawData(props.gameId))
+const boxScore = ref<BoxScore>(new BoxScore())
+const boxScoreApi = new BoxScoreApi()
+boxScoreRawDatacacheService.getOrFetch(Number(props.gameId), () => boxScoreApi.getBoxScore(props.gameId))
     .then((response) => {
-        boxScoreRawData.value = response
+        boxScore.value = response
+        game.finalPeriod = response.finalPeriod
         boxScoreDataLoading.value = false
     })
 </script>

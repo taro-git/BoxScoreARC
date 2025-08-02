@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia'
 
 
-export const gameDateStore = defineStore('gameDate', {
+export const selectedDateStore = defineStore('selectedDate', {
     state: () => ({
-        gameDate: new Date(),
+        selectedDate: new Date(),
     }),
     persist: {
         storage: sessionStorage,

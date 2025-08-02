@@ -18,18 +18,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, watch, type Component } from 'vue'
+import { ref, computed, defineProps, watch, type Component, type ComputedRef } from 'vue'
 
 import TeamStats from '../components/TeamStats.vue'
 import BoxScore from '../components/BoxScore.vue'
 import HeadToHeadRecord from '../components/HeadToHeadRecord.vue'
-import { gameSummaryStore } from '../store/gameSummary'
+import { gameStore } from '../store/game'
 import { settingsStore } from '../store/settings'
 import { type quarterRangeVariations, quarterRangeLabels } from '../types/QuarterRangeVariations'
 
 const props = defineProps<{
     gameId: string
 }>()
+
+const game = gameStore()
 
 const tabs = ['teamStats', 'boxScore', 'headToHeadRecord'] as const
 type TabKey = typeof tabs[number]
@@ -54,25 +56,25 @@ const tabProps = computed<Record<TabKey, Object>>(() => ({
 }))
 
 const selectedQuarterRange = ref<quarterRangeVariations>(settingsStore().defaultQuarterRangeType)
-const gameSummary = gameSummaryStore()
-const endQuater = gameSummary.live_period
-const quaterRange: Record<quarterRangeVariations, Record<'maxQuater' | 'minQuater', number>> = {
-    Q1: { maxQuater: 1, minQuater: 1 },
-    Q2: { maxQuater: 2, minQuater: 2 },
-    firstHalf: { maxQuater: 2, minQuater: 1 },
-    Q3: { maxQuater: 3, minQuater: 3 },
-    Q4: { maxQuater: 4, minQuater: 4 },
-    secondHalf: { maxQuater: 4, minQuater: 3 },
-    fourQuarters: { maxQuater: 4, minQuater: 1 },
-    all: { maxQuater: endQuater, minQuater: 1 },
-    OT: { maxQuater: endQuater <= 4 ? 5 : endQuater, minQuater: 5 }
-}
+const quaterRange: ComputedRef<Record<quarterRangeVariations, Record<'maxQuater' | 'minQuater', number>>> = computed(() => {
+    return {
+        Q1: { maxQuater: 1, minQuater: 1 },
+        Q2: { maxQuater: 2, minQuater: 2 },
+        firstHalf: { maxQuater: 2, minQuater: 1 },
+        Q3: { maxQuater: 3, minQuater: 3 },
+        Q4: { maxQuater: 4, minQuater: 4 },
+        secondHalf: { maxQuater: 4, minQuater: 3 },
+        fourQuarters: { maxQuater: 4, minQuater: 1 },
+        all: { maxQuater: game.finalPeriod, minQuater: 1 },
+        OT: { maxQuater: game.finalPeriod <= 4 ? 5 : game.finalPeriod, minQuater: 5 }
+    }
+})
 const maxSeconds = computed(() => {
-    const maxQuarter = quaterRange[selectedQuarterRange.value].maxQuater
-    return maxQuarter <= 4 ? 12 * maxQuarter * 60 : endQuater == 4 ? 12 * 4 * 60 : 12 * 4 * 60 + 5 * (maxQuarter - 4) * 60
+    const maxQuarter = quaterRange.value[selectedQuarterRange.value].maxQuater
+    return maxQuarter <= 4 ? 12 * maxQuarter * 60 : game.finalPeriod == 4 ? 12 * 4 * 60 : 12 * 4 * 60 + 5 * (maxQuarter - 4) * 60
 })
 const minSeconds = computed(() => {
-    const minQuarter = quaterRange[selectedQuarterRange.value].minQuater
+    const minQuarter = quaterRange.value[selectedQuarterRange.value].minQuater
     return minQuarter <= 4 ? 12 * (minQuarter - 1) * 60 : 12 * 4 * 60 + 5 * (minQuarter - 5) * 60
 })
 const gameClockRange = ref([minSeconds.value, minSeconds.value])
@@ -98,7 +100,7 @@ const formatReminTime = (seconds: number) => {
             quarter = Math.floor((seconds) / (12 * 60)) + 1
         } else {
             if (seconds === minSeconds.value) {
-                quarter = quaterRange[selectedQuarterRange.value].minQuater
+                quarter = quaterRange.value[selectedQuarterRange.value].minQuater
             } else {
                 quarter = Math.floor((seconds) / (12 * 60))
             }

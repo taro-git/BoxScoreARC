@@ -1,71 +1,67 @@
-import { BOX_SCORE_COLUMN_KEYS, type BoxScoreData, type BoxScoreRawData } from "../types/BoxScore"
+import { type BoxScoreTableData, type BoxScore } from "../types/BoxScore"
 
-export const updateBoxScoreData = (boxScoreData: BoxScoreData, boxScoreRawData: BoxScoreRawData, startRange: number, endRange: number): BoxScoreData => {
+export const updateBoxScoreData = (boxScoreTableData: BoxScoreTableData, boxScore: BoxScore, startRange: number, endRange: number): BoxScoreTableData => {
     if (startRange > endRange) {
         throw new Error("invalid game clock range, start > end")
     }
-    for (const [player_id_str, box_score_raw] of Object.entries(boxScoreRawData)) {
-        const player_id = parseInt(player_id_str, 10)
-        let start_box_score: number[] | null = null
-        let end_box_score: number[] | null = null
-        for (let i = 0; i < box_score_raw.length; i++) {
-            const [time, box_score] = box_score_raw[i]
+    for (const player of [...boxScore.homePlayers, ...boxScore.awayPlayers]) {
+        const playerId = player.playerId
+        const boxScoreRaw = player.boxScoreData
+        let startBoxScore: number[] | null = null
+        let endBoxScore: number[] | null = null
+        let lastTime = 0
+        let boxScoreDataAtLastSec = new Array(boxScoreRaw[0].length - 2).fill(0)
+        for (let i = 0; i < boxScoreRaw.length; i++) {
+            const time = boxScoreRaw[i][0]
+            const boxScoreData = boxScoreRaw[i].slice(2) as number[]
+            if (i != 0 && lastTime != time) {
+                boxScoreDataAtLastSec = boxScoreRaw[i - 1].slice(2) as number[]
+            }
             if (time >= startRange) {
-                if (!start_box_score) {
+                if (!startBoxScore) {
                     if (i == 0) {
-                        start_box_score = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
+                        startBoxScore = new Array(boxScoreData.length).fill(0)
                     } else {
-                        start_box_score = box_score_raw[i - 1][1]
+                        startBoxScore = boxScoreDataAtLastSec
                     }
                 }
                 if (time <= endRange) {
                     if (i == 0) {
-                        end_box_score = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
+                        endBoxScore = new Array(boxScoreData.length).fill(0)
                     } else {
-                        end_box_score = box_score
+                        endBoxScore = boxScoreData
                     }
                 } else {
                     break
                 }
             }
+            lastTime = time
         }
-        if (!start_box_score || !end_box_score) {
-            boxScoreData[player_id] = convertPlayTimeToMin(calcShootingPercentage(new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)))
+        if (!startBoxScore || !endBoxScore) {
+            boxScoreTableData[playerId] = calcShootingPercentage(new Array(boxScoreRaw[0].length - 2).fill(0))
         } else {
-            boxScoreData[player_id] = convertPlayTimeToMin(calcShootingPercentage(end_box_score.map((v, i) => v - start_box_score[i])))
+            boxScoreTableData[playerId] = calcShootingPercentage(endBoxScore.map((v, i) => Math.round((v - startBoxScore[i]) * 10) / 10))
         }
     }
-    return boxScoreData
+    return boxScoreTableData
 }
 
 const calcShootingPercentage = (boxScoraRow: number[]) => {
-    let result = boxScoraRow
-    if (result.length < 15) {
-        throw new Error("invalid box score data row")
-    }
-
+    let fgper = 0
+    let threeper = 0
+    let ftper = 0
     if (boxScoraRow[7] !== 0) {
-        result[8] = Math.round((boxScoraRow[6] / boxScoraRow[7]) * 100 * 10) / 10
-    } else {
-        result[8] = 0
+        fgper = Math.round((boxScoraRow[6] / boxScoraRow[7]) * 100 * 10) / 10
     }
-
-    if (boxScoraRow[10] !== 0) {
-        result[11] = Math.round((boxScoraRow[9] / boxScoraRow[10]) * 100 * 10) / 10
-    } else {
-        result[11] = 0
+    if (boxScoraRow[9] !== 0) {
+        threeper = Math.round((boxScoraRow[8] / boxScoraRow[9]) * 100 * 10) / 10
     }
-
-    if (boxScoraRow[13] !== 0) {
-        result[14] = Math.round((boxScoraRow[12] / boxScoraRow[13]) * 100 * 10) / 10
-    } else {
-        result[14] = 0
+    if (boxScoraRow[11] !== 0) {
+        ftper = Math.round((boxScoraRow[10] / boxScoraRow[11]) * 100 * 10) / 10
     }
-    return result
-}
-
-const convertPlayTimeToMin = (boxScoraRow: number[]) => {
-    let result = boxScoraRow
-    result[0] = Math.round(boxScoraRow[0] / 60 * 10) / 10
+    const result = boxScoraRow
+    result.splice(8, 0, fgper)
+    result.splice(11, 0, threeper)
+    result.splice(14, 0, ftper)
     return result
 }

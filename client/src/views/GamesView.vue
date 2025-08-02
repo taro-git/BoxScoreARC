@@ -41,17 +41,16 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
-import { GameSummariesApi } from '../apis/gameSummaries'
+import { GameSummariesApi } from '../apis/gameSummaries.api'
 import GameCard from '../components/GameCard.vue'
 import CalendarScroller from '../components/CalendarScroller.vue'
-import { Cache } from '../core/cache'
 import { swipe } from '../core/swipe'
-import { gameDateStore } from '../store/gameDate'
+import { selectedDateStore } from '../store/selectedDate'
 import { settingsStore } from '../store/settings'
-import { GameSummary, isGameSummary } from '../types/GameSummary'
+import { GameSummary } from '../types/GameSummary'
 import { GameSummariesSets } from '../types/GameSummariesSets'
 
-const selectedDate = ref(gameDateStore().gameDate)
+const selectedDate = ref(selectedDateStore().selectedDate)
 
 const scoreDisplay = settingsStore().scoreDisplay
 
@@ -65,20 +64,11 @@ const updateDate = (date: Date) => {
         element.scrollTo({ top: 0 })
     }
     selectedDate.value = date
-    gameDateStore().gameDate = date
+    selectedDateStore().selectedDate = date
 }
 
 const scroll = ref<HTMLElement[] | null>(null)
 
-const catcheService = new Cache<GameSummary[]>({
-    removalPolicy: 'farthest',
-    getDistanceForFarthest: (time) => Math.abs(time - new Date(selectedDate.value).setHours(0, 0, 0, 0)),
-    cacheFilter: (_, data: unknown): data is GameSummary[] => {
-        if (!Array.isArray(data)) return false
-        else if (data.length === 0) return true
-        else return data.every(item => isGameSummary(item) && (item as GameSummary).status_id !== 2)
-    }
-})
 const gameSummariesApi = new GameSummariesApi()
 const updategameSummariesSets = async () => {
     const base = selectedDate.value
@@ -101,10 +91,7 @@ const updategameSummariesSets = async () => {
         targetDate.setDate(targetDate.getDate() + dayOffset)
 
         try {
-            const response = await catcheService.getOrFetch(
-                new Date(targetDate).setHours(0, 0, 0, 0),
-                () => gameSummariesApi.getGameSummaries(targetDate)
-            )
+            const response = await gameSummariesApi.getGameSummariesByDate(targetDate)
             gameSummariesSets.gameSummaryMap.value[dayOffset] = response
         } catch (error) {
             gameSummariesSets.error.value[dayOffset].isError = true
@@ -120,11 +107,11 @@ const updategameSummariesSets = async () => {
 watch(selectedDate, updategameSummariesSets, { immediate: true })
 
 const slideToNextDay = () => {
-    updateDate(new Date(selectedDate.value.getTime() + 86400000))
+    updateDate(new Date(new Date(selectedDate.value).getTime() + 86400000))
 }
 
 const slideToPreviousDay = () => {
-    updateDate(new Date(selectedDate.value.getTime() - 86400000))
+    updateDate(new Date(new Date(selectedDate.value).getTime() - 86400000))
 }
 
 const {

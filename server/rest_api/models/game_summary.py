@@ -24,6 +24,16 @@ class GameSummary(models.Model):
     @property
     def away_players_on_game(self):
         return self.players.filter(is_home=False)
+    @property
+    def game_category(self):
+        return {
+            '1': 'Preseason',
+            '2': 'Regular Season',
+            '3': 'All Star',
+            '4': 'Playoffs',
+            '5': 'Play-In Tournament',
+            '6': 'Emirates NBA Cup'
+        }.get(self.game_id[2], 'Unknown')
 
 
 class PlayerOnGame(models.Model):
