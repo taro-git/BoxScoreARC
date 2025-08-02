@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from .models.game_summary import GameSummary, Team, PlayerOnGame
-from .models.box_score import BoxScore, BoxScorePlayer, BoxScoreData
+from rest_api.models.game_summary import GameSummary, Team, PlayerOnGame
+from rest_api.models.box_score import BoxScore, BoxScorePlayer, BoxScoreData
 
 @admin.register(GameSummary)
 class GameSummary(admin.ModelAdmin):

@@ -1,7 +1,7 @@
 from rest_framework import routers
 
-from .views.game_summaries import GameSummariesViewSet
-from .views.box_score import BoxScoreViewSet
+from rest_api.views.game_summaries import GameSummariesViewSet
+from rest_api.views.box_score import BoxScoreViewSet
 
 router = routers.DefaultRouter()
 router.register('game_summaries', GameSummariesViewSet)

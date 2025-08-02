@@ -1,8 +1,42 @@
+from typing import TypedDict, List
+from datetime import datetime
+
 from rest_framework import serializers
 
-from ..models.game_summary import GameSummary, PlayerOnGame, Team
+from rest_api.models.game_summary import GameSummary, PlayerOnGame, Team
 
+##
+## schema for access from django self
+#### 
+class PlayerOnGameCreate(TypedDict):
+    player_id: int
+    name: str
+    jersey: str
+    position: str
+    is_starter: bool
+    is_inactive: bool
+    sequence: int
 
+class GameSummaryCreate(TypedDict):
+    game_id: int
+    sequence: int
+    status_id: int
+    """1: scheduled, 2: game started, 3: game finished"""
+    status_text: str
+    """status_id=1 -> h:mm pm/am ET, status_id=2 -> 1st Qtr etc., status_id=3 -> Final"""
+    game_datetime: datetime
+    home_team_id: int
+    away_team_id: int
+    home_team_abb: str
+    away_team_abb: str
+    home_score: int
+    away_score: int
+    home_players: List[PlayerOnGameCreate]
+    away_players: List[PlayerOnGameCreate]
+
+##
+## Serializer
+#### 
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
@@ -64,10 +98,6 @@ class GameSummarySerializer(serializers.ModelSerializer):
         errors = {}
         if data.get('home_team').team_id == data.get('away_team').team_id:
             errors['team_id'] = "Home and away teams must be different."
-        if len([ player for player in data.get('home_players_on_game') or [] if player.get('is_starter')]) != 5:
-            errors['home_players'] = "Number of starting player must be 5"
-        if len([ player for player in data.get('away_players_on_game') or [] if player.get('is_starter')]) != 5:
-            errors['away_players'] = "Number of starting player must be 5"
         if errors:
             raise serializers.ValidationError(errors)
         return data

@@ -11,15 +11,20 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='BoxScore',
+            fields=[
+                ('game_id', models.CharField(primary_key=True, serialize=False)),
+                ('final_seconds', models.IntegerField()),
+            ],
+        ),
+        migrations.CreateModel(
             name='GameSummary',
             fields=[
                 ('game_id', models.CharField(primary_key=True, serialize=False)),
                 ('sequence', models.IntegerField()),
                 ('status_id', models.IntegerField()),
                 ('status_text', models.CharField()),
-                ('live_period', models.IntegerField()),
-                ('live_clock', models.CharField()),
-                ('game_date_est', models.DateField()),
+                ('game_datetime', models.DateTimeField()),
                 ('home_score', models.IntegerField()),
                 ('away_score', models.IntegerField()),
             ],
@@ -31,22 +36,6 @@ class Migration(migrations.Migration):
                 ('abbreviation', models.CharField()),
                 ('logo', models.CharField()),
             ],
-        ),
-        migrations.CreateModel(
-            name='BoxScore',
-            fields=[
-                ('game_id', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='rest_api.gamesummary')),
-            ],
-        ),
-        migrations.AddField(
-            model_name='gamesummary',
-            name='away_team',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='away_games', to='rest_api.team'),
-        ),
-        migrations.AddField(
-            model_name='gamesummary',
-            name='home_team',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='home_games', to='rest_api.team'),
         ),
         migrations.CreateModel(
             name='BoxScorePlayer',
@@ -63,7 +52,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('elapsed_seconds', models.IntegerField()),
                 ('is_on_court', models.BooleanField()),
-                ('min', models.DecimalField(decimal_places=2, max_digits=5)),
+                ('sec', models.IntegerField()),
                 ('pts', models.IntegerField()),
                 ('reb', models.IntegerField()),
                 ('ast', models.IntegerField()),
@@ -71,24 +60,17 @@ class Migration(migrations.Migration):
                 ('blk', models.IntegerField()),
                 ('fg', models.IntegerField()),
                 ('fga', models.IntegerField()),
-                ('fgper', models.DecimalField(decimal_places=2, max_digits=5)),
                 ('three', models.IntegerField()),
                 ('threea', models.IntegerField()),
-                ('threeper', models.DecimalField(decimal_places=2, max_digits=5)),
                 ('ft', models.IntegerField()),
                 ('fta', models.IntegerField()),
-                ('ftper', models.DecimalField(decimal_places=2, max_digits=5)),
                 ('oreb', models.IntegerField()),
                 ('dreb', models.IntegerField()),
                 ('to', models.IntegerField()),
                 ('pf', models.IntegerField()),
-                ('eff', models.DecimalField(decimal_places=2, max_digits=5)),
                 ('plusminus', models.IntegerField()),
                 ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='moment_data', to='rest_api.boxscoreplayer')),
             ],
-            options={
-                'constraints': [models.UniqueConstraint(fields=('player', 'elapsed_seconds'), name='unique_box_score_player_id_elapsed_seconds')],
-            },
         ),
         migrations.CreateModel(
             name='PlayerOnGame',
@@ -104,12 +86,23 @@ class Migration(migrations.Migration):
                 ('sequence', models.IntegerField(blank=True, null=True)),
                 ('game_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='players', to='rest_api.gamesummary')),
             ],
-            options={
-                'constraints': [models.UniqueConstraint(fields=('game_id', 'player_id'), name='unique_game_summary_game_id_player_id')],
-            },
+        ),
+        migrations.AddField(
+            model_name='gamesummary',
+            name='away_team',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='away_games', to='rest_api.team'),
+        ),
+        migrations.AddField(
+            model_name='gamesummary',
+            name='home_team',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='home_games', to='rest_api.team'),
         ),
         migrations.AddConstraint(
             model_name='boxscoreplayer',
             constraint=models.UniqueConstraint(fields=('game_id', 'player_id'), name='unique_box_score_game_id_player_id'),
+        ),
+        migrations.AddConstraint(
+            model_name='playerongame',
+            constraint=models.UniqueConstraint(fields=('game_id', 'player_id'), name='unique_game_summary_game_id_player_id'),
         ),
     ]

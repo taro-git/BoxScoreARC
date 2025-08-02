@@ -12,9 +12,8 @@ class GameSummary(models.Model):
     sequence = models.IntegerField()
     status_id = models.IntegerField()
     status_text = models.CharField()
-    live_period = models.IntegerField()
-    live_clock = models.CharField()
-    game_date_est = models.DateField()
+    game_datetime = models.DateTimeField()
+    """サマータイム考慮のニューヨーク時間"""
     home_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='home_games')
     home_score = models.IntegerField()
     away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')

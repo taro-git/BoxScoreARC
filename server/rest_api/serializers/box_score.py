@@ -1,12 +1,95 @@
+from typing import TypedDict, List
+
 from rest_framework import serializers
 
-from ..models.box_score import BoxScore, BoxScorePlayer, BoxScoreData
+from rest_api.models.box_score import BoxScore, BoxScorePlayer, BoxScoreData
+
+##
+## schema for access from django self
+#### 
+class BoxScoreDataCreate(TypedDict):
+    elapsed_seconds: int
+    is_on_court: bool
+    sec: int
+    pts: int
+    reb: int
+    ast: int
+    stl: int
+    blk: int
+    fg: int
+    fga: int
+    three: int
+    threea: int
+    ft: int
+    fta: int
+    oreb: int
+    dreb: int
+    to: int
+    pf: int
+    plusminus: int
+
+
+class PlayerOnBoxScoreCreate(TypedDict):
+    player_id: int
+    box_score_data: List[BoxScoreDataCreate]
+
+
+class BoxScoreCreate(TypedDict):
+    game_id: int
+    final_seconds: int
+    """ゲーム終了時点の経過時間 (秒)"""
+    home_players: List[PlayerOnBoxScoreCreate]
+    away_players: List[PlayerOnBoxScoreCreate]
+
+
+##
+## Serializer
+#### 
+BOX_SCORE_HEADER = [
+    'elapsed_seconds',
+    'is_on_court',
+    'min',
+    'pts',
+    'reb',
+    'ast',
+    'stl',
+    'blk',
+    'fg',
+    'fga',
+    'three',
+    'threea',
+    'ft',
+    'fta',
+    'oreb',
+    'dreb',
+    'to',
+    'pf',
+    'eff',
+    'plusminus',
+]
+
+def _snake_to_camel(snake_str: str) -> str:
+    parts = snake_str.split('_')
+    return parts[0] + ''.join(word.capitalize() for word in parts[1:])
 
 
 class BoxScoreDataSerializer(serializers.ModelSerializer):
+    sec = serializers.IntegerField(write_only=True)
+    min = serializers.SerializerMethodField()
+    eff = serializers.SerializerMethodField()
+
     class Meta:
         model = BoxScoreData
         exclude = ['id', 'player']
+    
+    def get_min(self, obj):
+        return obj.min
+    
+    def get_eff(self, obj):
+        return obj.eff
+    
+    def to_representation(self, instance):
+        return [getattr(instance, header) for header in BOX_SCORE_HEADER]
 
 
 class BoxScorePlayerSerializer(serializers.ModelSerializer):
@@ -17,11 +100,20 @@ class BoxScorePlayerSerializer(serializers.ModelSerializer):
 
 
 class BoxScoreSerializer(serializers.ModelSerializer):
+    final_seconds = serializers.IntegerField(write_only=True)
+    final_period = serializers.SerializerMethodField()
+    box_score_data_header = serializers.SerializerMethodField()
     home_players = BoxScorePlayerSerializer(many=True, source='home_players_on_box_score')
     away_players = BoxScorePlayerSerializer(many=True, source='away_players_on_box_score')
     class Meta:
         model = BoxScore
         fields = '__all__'
+    
+    def get_final_period(self, obj):
+        return obj.final_period
+    
+    def get_box_score_data_header(self, obj):
+        return [_snake_to_camel(snake_str) for snake_str in BOX_SCORE_HEADER]
     
     def _create_player_and_data(self, box_score: BoxScore, players_data: list, is_home: bool):
         for player_data in players_data:
