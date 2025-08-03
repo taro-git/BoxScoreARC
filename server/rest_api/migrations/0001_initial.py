@@ -30,6 +30,22 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='ScheduledBoxScoreStatus',
+            fields=[
+                ('game_id', models.IntegerField(primary_key=True, serialize=False)),
+                ('registered_datetime', models.DateTimeField(auto_now=True)),
+                ('status', models.CharField(choices=[('pending', 'pending'), ('progressing', 'progressing')], default='pending')),
+                ('progress', models.IntegerField(default=0)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='SchedulerLock',
+            fields=[
+                ('name', models.CharField(primary_key=True, serialize=False)),
+                ('locked_at', models.DateTimeField(auto_now=True)),
+            ],
+        ),
+        migrations.CreateModel(
             name='Team',
             fields=[
                 ('team_id', models.IntegerField(primary_key=True, serialize=False)),

@@ -25,4 +25,5 @@ echo "Collecting static files"
 python manage.py collectstatic
 
 echo "Starting Gunicorn server..."
+export START_EPOCH=$(date +%s)
 exec python manage.py runserver 0.0.0.0:8000

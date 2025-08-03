@@ -76,11 +76,11 @@ DEBUG = is_dev_mode
 
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
-        *(['djangorestframework_camel_case.render.CamelCaseJSONRenderer'] if is_dev_mode else ['rest_framework.renderers.JSONRenderer']),
+        'djangorestframework_camel_case.render.CamelCaseJSONRenderer',
         *(['djangorestframework_camel_case.render.CamelCaseBrowsableAPIRenderer'] if is_dev_mode else []),
     ],
     'DEFAULT_PARSER_CLASSES': [
-        *(['djangorestframework_camel_case.parser.CamelCaseJSONParser'] if is_dev_mode else []),
+        'djangorestframework_camel_case.parser.CamelCaseJSONParser',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend'

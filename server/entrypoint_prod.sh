@@ -8,4 +8,5 @@ echo "Applying database migrations..."
 python manage.py migrate --noinput
 
 echo "Starting Gunicorn server..."
+export START_EPOCH=$(date +%s)
 exec gunicorn box_score_arc.wsgi:application -w 4 --bind 0.0.0.0:8000

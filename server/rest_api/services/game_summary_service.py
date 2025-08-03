@@ -6,6 +6,7 @@ from typing import List
 from zoneinfo import ZoneInfo
 
 from django.core.cache  import cache
+from django.db import transaction, IntegrityError
 from nba_api.stats.endpoints import scheduleleaguev2, scoreboardv2, leaguegamefinder
 
 from rest_api.models.game_summary import GameSummary, Team
@@ -215,32 +216,37 @@ def upsert_game_summary(game_summary_create: GameSummaryCreate):
     _create_not_existing_team(game_summary_create.get('away_team_id', -2), game_summary_create.pop('away_team_abb', 'unknown'))
 
     game_id = game_summary_create.get("game_id")
+    if not game_id:
+        raise ValueError("Game ID is not set")
 
-    if game_id:
-        if GameSummary.objects.filter(game_id=game_id).exists():
-            instance = GameSummary.objects.get(game_id=game_id)
-        else:
-            instance = None
-        serializer = GameSummarySerializer(instance=instance, data=game_summary_create)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            raise ValueError(serializer.errors)
-    else:
-        raise ValueError('Game ID is not set')
+    try:
+        with transaction.atomic():
+            instance = GameSummary.objects.filter(game_id=game_id).first()
+            serializer = GameSummarySerializer(instance=instance, data=game_summary_create)
+
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+    except IntegrityError as e:
+        raise ValueError(f"DB制約違反: {e}")
+    except ValueError as ve:
+        raise ve 
 
 
 def _create_not_existing_team(team_id: int, team_abb: str):
     if not Team.objects.filter(team_id=team_id).exists():
-        serializer = TeamSerializer(data={
-            'team_id': team_id,
-            'abbreviation': team_abb,
-            'logo': _fetch_and_encode_svg(f'https://cdn.nba.com/logos/nba/{team_id}/global/L/logo.svg')
-        })
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            raise ValueError(serializer.errors)
+        try:
+            with transaction.atomic():
+                serializer = TeamSerializer(data={
+                    'team_id': team_id,
+                    'abbreviation': team_abb,
+                    'logo': _fetch_and_encode_svg(f'https://cdn.nba.com/logos/nba/{team_id}/global/L/logo.svg')
+                })
+                if serializer.is_valid(raise_exception=True):
+                    serializer.save()
+        except IntegrityError as e:
+            raise ValueError(f"DB制約違反: {e}")
+        except ValueError as ve:
+            raise ve 
 
 
 def _fetch_and_encode_svg(url: str) -> str:
