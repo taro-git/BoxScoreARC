@@ -7,9 +7,9 @@ export class BoxScoreApi extends BackendApi {
         this.setPath('box_score')
     }
 
-    public async getBoxScore(gameId: string): Promise<BoxScore> {
-        const result: IBoxScore = await this.get({ game_id: gameId })
-        return new BoxScore(result)
+    public async getBoxScore(gameId: string): Promise<BoxScore[]> {
+        const result: IBoxScore[] = await this.get({ game_id: gameId })
+        return result.map((iBoxScore: IBoxScore) => new BoxScore(iBoxScore))
     }
 }
 

@@ -8,6 +8,7 @@ class RestApiConfig(AppConfig):
     def ready(self):
         # if os.environ.get('RUN_MAIN') != 'true':
         #     return
+        from rest_api.jobs import signals
         print(f'called RestApiConfig.ready: worker pid = {os.getpid()}')
         from rest_api.core.schedulers import start_scheduler
         start_scheduler()

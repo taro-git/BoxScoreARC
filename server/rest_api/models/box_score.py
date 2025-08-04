@@ -1,10 +1,10 @@
 from django.db import models
 
-from rest_api.models.game_summary import GameSummary
+from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
 
 
 class BoxScore(models.Model):
-    game_id = models.CharField(primary_key=True)
+    game_id = models.OneToOneField(ScheduledBoxScoreStatus, primary_key=True, on_delete=models.CASCADE)
     final_seconds = models.IntegerField()
     @property
     def final_period(self):

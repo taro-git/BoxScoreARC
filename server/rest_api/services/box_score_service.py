@@ -8,6 +8,7 @@ from django.db import transaction, IntegrityError
 from nba_api.stats.endpoints import playbyplayv2, boxscoretraditionalv3
 
 from rest_api.models.box_score import BoxScore
+from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
 from rest_api.serializers.box_score import BoxScoreSerializer, BoxScoreCreate, PlayerOnBoxScoreCreate
 from rest_api.utils.fetch_player_on_game import fetch_player_on_game, PlayersDict
 
@@ -110,21 +111,23 @@ class BoxScoreCreateMaker():
         })
 
 
-def fetch_box_scores(game_ids: List[str]) -> List[BoxScoreCreate]:
+def fetch_box_score(game_id: str, box_score_status: ScheduledBoxScoreStatus) -> BoxScoreCreate:
     """指定の game_id の PlayByPlay を nba_api から取得し、BoxScoreCreate クラスを生成します."""
-    box_score_creates: List[BoxScoreCreate] = []
-    for game_id in game_ids:
-        play_by_play_v2 = playbyplayv2.PlayByPlayV2(game_id=game_id)
-        play_by_play = play_by_play_v2.play_by_play.get_data_frame()
-        players = fetch_player_on_game(game_id)
-        box_score_creates.append(_convert_play_by_play_to_box_score_create(game_id, play_by_play, players))
-    return box_score_creates
+    play_by_play_v2 = playbyplayv2.PlayByPlayV2(game_id=game_id)
+    box_score_status.progress = 7
+    box_score_status.save()
+    play_by_play = play_by_play_v2.play_by_play.get_data_frame()
+    players = fetch_player_on_game(game_id)
+    box_score_status.progress = 24
+    box_score_status.save()
+    return _convert_play_by_play_to_box_score_create(game_id, play_by_play, players, box_score_status)
 
 
 def _convert_play_by_play_to_box_score_create(
         game_id: str,
         play_by_play: DataFrame,
-        players_info: PlayersDict
+        players_info: PlayersDict,
+        box_score_status: ScheduledBoxScoreStatus
     ) -> BoxScoreCreate:
     on_court_home_player_ids = [players_info['home_players'][i]['player_id'] for i in range(5)]
     on_court_away_player_ids = [players_info['away_players'][i]['player_id'] for i in range(5)]
@@ -136,9 +139,13 @@ def _convert_play_by_play_to_box_score_create(
         box_score_create_maker.init_player(0, home_player_id, True)
     for away_player_id in on_court_away_player_ids:
         box_score_create_maker.init_player(0, away_player_id, False)
-
+    length_of_play_by_play = len(play_by_play)
     change_period_flag = False
-    for one_play in play_by_play.itertuples():
+    for i, one_play in enumerate(play_by_play.itertuples()):
+        progressing = 24 + round((i + 1)/length_of_play_by_play*75)
+        if box_score_status.progress + 4 < progressing:
+            box_score_status.progress = progressing
+            box_score_status.save()
         elapsed_seconds = _get_elapsed_seconds(one_play.PERIOD, one_play.PCTIMESTRING)
         elapsed_seconds_diff = elapsed_seconds - last_elapsed_seconds
         # ピリオド間の選手交代

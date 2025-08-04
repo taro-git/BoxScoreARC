@@ -7,8 +7,14 @@
         </v-btn-toggle>
         <v-skeleton-loader elevation="7" :loading="isLoading" color="lighten" type="table-row@12">
             <v-responsive class="elevation-7 rounded fill-height">
-                <box-score-table :game-summary="gameSummary" :data="boxScoreTableData" :selected-team="selectedTeam"
-                    :game-clock-range="gameClockRange" />
+                <box-score-table v-if="!isOccuredError && !isProgressing" :game-summary="gameSummary"
+                    :data="boxScoreTableData" :selected-team="selectedTeam" :game-clock-range="gameClockRange" />
+                <v-empty-state v-if="isOccuredError" title="Whoops, Server Error" :text="errorMessage"
+                    class="text-accent" />
+                <v-progress-circular v-if="isProgressing" :model-value="progress" :rotate="360" :size="100" :width="15"
+                    color="accent" :style="{ 'width': '100%', 'margin-top': '100px', 'margin-bottom': '100px' }">
+                    <template v-slot:default> {{ progress }} % </template>
+                </v-progress-circular>
             </v-responsive>
         </v-skeleton-loader>
     </v-sheet>
@@ -19,11 +25,11 @@ import { computed, defineProps, ref, watch } from 'vue'
 
 import { BoxScoreApi } from '../apis/boxScore.api';
 import { GameSummariesApi } from '../apis/gameSummaries.api';
+import { ScheduledBoxScoreStatusApi } from '../apis/scheduledBoxScoreStatus.api';
 import BoxScoreTable from './BoxScoreTable.vue';
 import { updateBoxScoreData } from '../core/boxScoreData';
 import { gameStore } from '../store/game';
 import { BOX_SCORE_COLUMN_KEYS, BoxScore, type BoxScoreTableData } from '../types/BoxScore'
-import { Cache } from '../core/cache';
 
 const props = defineProps<{
     gameId: string
@@ -50,6 +56,9 @@ const gameSummaryLoading = ref(true)
 const boxScoreDataLoading = ref(true)
 const isLoading = computed(() => gameSummaryLoading.value || boxScoreDataLoading.value)
 
+const errorMessage = ref('')
+const isOccuredError = computed(() => errorMessage.value != '')
+
 const boxScoreTableData = ref<BoxScoreTableData>({})
 const gameSummariesApi = new GameSummariesApi()
 gameSummariesApi.getGameSummaryByGameId(props.gameId)
@@ -62,21 +71,41 @@ gameSummariesApi.getGameSummaryByGameId(props.gameId)
         players.forEach(player => {
             if (!player.isInactive) boxScoreTableData.value[player.playerId] = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
         })
+    }).catch((error) => {
+        errorMessage.value = error.message
+    }).finally(() => {
         gameSummaryLoading.value = false
     })
 
-const boxScoreRawDatacacheService = new Cache<BoxScore>({
-    ttlSeconds: 900,
-    maxItems: 5,
-})
+
 const boxScore = ref<BoxScore>(new BoxScore())
+const scheduledBoxScoreStatusApi = new ScheduledBoxScoreStatusApi()
+const progress = ref<number>(0)
+const isProgressing = computed(() => progress.value !== 100)
 const boxScoreApi = new BoxScoreApi()
-boxScoreRawDatacacheService.getOrFetch(Number(props.gameId), () => boxScoreApi.getBoxScore(props.gameId))
-    .then((response) => {
-        boxScore.value = response
-        game.finalPeriod = response.finalPeriod
+const pollScheduledBoxScoreStatus = async () => {
+    try {
+        const response = await scheduledBoxScoreStatusApi.getScheduledBoxScoreStatus(props.gameId)
+        if (!response || Object.keys(response).length === 0) {
+            await scheduledBoxScoreStatusApi.postScheduledBoxScoreStatus(props.gameId)
+        } else {
+            progress.value = response[0].progress
+            if (progress.value === 100) {
+                const boxScoreResponse = await boxScoreApi.getBoxScore(props.gameId)
+                boxScore.value = boxScoreResponse[0]
+                game.finalPeriod = boxScoreResponse[0].finalPeriod
+                return
+            }
+        }
+        setTimeout(pollScheduledBoxScoreStatus, 1000)
+    } catch (error) {
+        errorMessage.value = String(error)
+    } finally {
         boxScoreDataLoading.value = false
-    })
+    }
+}
+
+pollScheduledBoxScoreStatus()
 </script>
 
 <style scoped></style>
