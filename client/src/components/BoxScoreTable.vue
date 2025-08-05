@@ -43,7 +43,8 @@
                         </td>
                         <td :class="['data', [rowIndex % 2 !== 0 ? 'odd-row' : '']]"
                             v-for="(cell, colIndex) in row.comulativeBoxscore"
-                            :key="'cell-' + rowIndex + '-' + colIndex">
+                            :key="'cell-' + rowIndex + '-' + colIndex"
+                            :style="!isCollect && (colIndex == 0 || colIndex == 20) ? { 'background-color': '#666666' } : {}">
                             <template v-if="colIndex == 8 || colIndex == 11 || colIndex == 14">
                                 {{ `${cell}%` }}
                             </template>
@@ -78,6 +79,7 @@ const props = defineProps<{
     data: BoxScoreTableData
     selectedTeam: string
     gameClockRange: number[]
+    isCollect: boolean
 }>()
 
 const convertPlayersToBoxScore = (players: Player[]): BoxScoreRow[] => {

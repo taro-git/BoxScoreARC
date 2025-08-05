@@ -82,6 +82,7 @@ interface PlayerOnBoxScore {
 export interface IBoxScore {
     gameId: string
     finalPeriod: number
+    isCollect: boolean
     boxScoreDataHeader: string[]
     homePlayers: PlayerOnBoxScore[]
     awayPlayers: PlayerOnBoxScore[]
@@ -90,12 +91,14 @@ export interface IBoxScore {
 export class BoxScore {
     gameId: string
     finalPeriod: number
+    isCollect: boolean
     homePlayers: PlayerOnBoxScore[]
     awayPlayers: PlayerOnBoxScore[]
 
     constructor(data?: IBoxScore) {
         this.gameId = data?.gameId ?? ''
         this.finalPeriod = data?.finalPeriod ?? 4
+        this.isCollect = data?.isCollect ?? false
         this.homePlayers = data?.homePlayers ?? []
         this.awayPlayers = data?.awayPlayers ?? []
     }

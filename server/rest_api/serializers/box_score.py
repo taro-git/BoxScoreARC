@@ -102,6 +102,7 @@ class BoxScorePlayerSerializer(serializers.ModelSerializer):
 class BoxScoreSerializer(serializers.ModelSerializer):
     final_seconds = serializers.IntegerField(write_only=True)
     final_period = serializers.SerializerMethodField()
+    is_collect = serializers.SerializerMethodField()
     box_score_data_header = serializers.SerializerMethodField()
     home_players = BoxScorePlayerSerializer(many=True, source='home_players_on_box_score')
     away_players = BoxScorePlayerSerializer(many=True, source='away_players_on_box_score')
@@ -111,6 +112,9 @@ class BoxScoreSerializer(serializers.ModelSerializer):
     
     def get_final_period(self, obj):
         return obj.final_period
+    
+    def get_is_collect(self, obj):
+        return obj.is_collect
     
     def get_box_score_data_header(self, obj):
         return [_snake_to_camel(snake_str) for snake_str in BOX_SCORE_HEADER]

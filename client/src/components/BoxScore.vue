@@ -8,7 +8,8 @@
         <v-skeleton-loader elevation="7" :loading="isLoading" color="lighten" type="table-row@12">
             <v-responsive class="elevation-7 rounded fill-height">
                 <box-score-table v-if="!isOccuredError && !isProgressing" :game-summary="gameSummary"
-                    :data="boxScoreTableData" :selected-team="selectedTeam" :game-clock-range="gameClockRange" />
+                    :data="boxScoreTableData" :selected-team="selectedTeam" :game-clock-range="gameClockRange"
+                    :is-collect="boxScore.isCollect" />
                 <v-empty-state v-if="isOccuredError" title="Whoops, Server Error" :text="errorMessage"
                     class="text-accent" />
                 <v-progress-circular v-if="isProgressing" :model-value="progress" :rotate="360" :size="100" :width="15"
@@ -40,6 +41,12 @@ const teams = ['awayTeam', 'homeTeam'] as const
 type Teams = typeof teams[number]
 const selectedTeam = ref<Teams>('awayTeam')
 
+const isLoading = ref(true)
+const errorMessage = ref('')
+const isOccuredError = computed(() => errorMessage.value != '')
+const progress = ref<number>(0)
+const isProgressing = computed(() => progress.value !== 100)
+
 const game = gameStore()
 const gameSummary = game.gameSummary
 gameSummary.awayScore = 0
@@ -52,48 +59,37 @@ watch(props.gameClockRange, ([startRange, endRange]) => {
         .reduce((totalPts, playerId) => totalPts + boxScoreTableData.value[playerId][1], 0)
 })
 
-const gameSummaryLoading = ref(true)
-const boxScoreDataLoading = ref(true)
-const isLoading = computed(() => gameSummaryLoading.value || boxScoreDataLoading.value)
-
-const errorMessage = ref('')
-const isOccuredError = computed(() => errorMessage.value != '')
-
-const boxScoreTableData = ref<BoxScoreTableData>({})
+const scheduledBoxScoreStatusApi = new ScheduledBoxScoreStatusApi()
 const gameSummariesApi = new GameSummariesApi()
-gameSummariesApi.getGameSummaryByGameId(props.gameId)
-    .then((response) => {
-        gameSummary.awayTeam = response.awayTeam
-        gameSummary.homeTeam = response.homeTeam
-        gameSummary.awayPlayers = response.awayPlayers
-        gameSummary.homePlayers = response.homePlayers
-        const players = [...response.homePlayers, ...response.awayPlayers]
-        players.forEach(player => {
-            if (!player.isInactive) boxScoreTableData.value[player.playerId] = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
-        })
-    }).catch((error) => {
-        errorMessage.value = error.message
-    }).finally(() => {
-        gameSummaryLoading.value = false
-    })
-
+const boxScoreApi = new BoxScoreApi()
 
 const boxScore = ref<BoxScore>(new BoxScore())
-const scheduledBoxScoreStatusApi = new ScheduledBoxScoreStatusApi()
-const progress = ref<number>(0)
-const isProgressing = computed(() => progress.value !== 100)
-const boxScoreApi = new BoxScoreApi()
+const boxScoreTableData = ref<BoxScoreTableData>({})
 const pollScheduledBoxScoreStatus = async () => {
     try {
         const response = await scheduledBoxScoreStatusApi.getScheduledBoxScoreStatus(props.gameId)
         if (!response || Object.keys(response).length === 0) {
             await scheduledBoxScoreStatusApi.postScheduledBoxScoreStatus(props.gameId)
+        } else if (response[0].errorMessage) {
+            throw new Error(response[0].errorMessage)
         } else {
             progress.value = response[0].progress
             if (progress.value === 100) {
+
+                const gameSummaryResponse = await gameSummariesApi.getGameSummaryByGameId(props.gameId)
+                gameSummary.awayTeam = gameSummaryResponse[0].awayTeam
+                gameSummary.homeTeam = gameSummaryResponse[0].homeTeam
+                gameSummary.awayPlayers = gameSummaryResponse[0].awayPlayers
+                gameSummary.homePlayers = gameSummaryResponse[0].homePlayers
+                const players = [...gameSummaryResponse[0].homePlayers, ...gameSummaryResponse[0].awayPlayers]
+                players.forEach(player => {
+                    if (!player.isInactive) boxScoreTableData.value[player.playerId] = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
+                })
+
                 const boxScoreResponse = await boxScoreApi.getBoxScore(props.gameId)
                 boxScore.value = boxScoreResponse[0]
                 game.finalPeriod = boxScoreResponse[0].finalPeriod
+
                 return
             }
         }
@@ -101,7 +97,7 @@ const pollScheduledBoxScoreStatus = async () => {
     } catch (error) {
         errorMessage.value = String(error)
     } finally {
-        boxScoreDataLoading.value = false
+        isLoading.value = false
     }
 }
 

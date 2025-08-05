@@ -34,16 +34,16 @@ def fetch_game_summaries_by_season(season:str=None) -> List[GameSummaryCreate]:
             game_summary_creates.append({
                 'game_id': season_game.gameId,
                 'home_team_id': season_game.homeTeam_teamId,
-                'home_team_abb': season_game.homeTeam_teamTricode,
-                'home_score': season_game.homeTeam_score,
+                'home_team_abb': season_game.homeTeam_teamTricode if season_game.homeTeam_teamTricode else 'unknown',
+                'home_score': season_game.homeTeam_score if season_game.homeTeam_score else 0,
                 'home_players': [],
                 'away_team_id': season_game.awayTeam_teamId,
-                'away_team_abb': season_game.awayTeam_teamTricode,
-                'away_score': season_game.awayTeam_score,
+                'away_team_abb': season_game.awayTeam_teamTricode if season_game.awayTeam_teamTricode else 'unknown',
+                'away_score': season_game.awayTeam_score if season_game.awayTeam_score else 0,
                 'away_players': [],
                 'game_datetime': datetime.strptime(season_game.gameDateTimeEst, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=ZoneInfo("America/New_York")),
                 'status_id': season_game.gameStatus,
-                'status_text': season_game.gameStatusText,
+                'status_text': season_game.gameStatusText if season_game.gameStatusText else 'Final',
                 'sequence': season_game.gameSequence,
             })
     else:
@@ -74,7 +74,7 @@ def fetch_game_summaries_by_season(season:str=None) -> List[GameSummaryCreate]:
                         'away_team_abb': 'unknown',
                         'away_score': 0,
                         'away_players': [],
-                        'game_datetime': datetime(game_date.year, game_date.month, game_date.day, 19, 0, tzinfo=ZoneInfo("America/New_York")),
+                        'game_datetime': datetime(game_date.year, game_date.month, game_date.day, 11, 0, 0, tzinfo=ZoneInfo("America/New_York")),
                         'status_id': 3 if game_date < datetime.now() else 1,
                         'status_text': 'Final' if game_date < datetime.now() else 'h:mm pm/am ET',
                         'sequence': 100,
@@ -91,7 +91,7 @@ def fetch_game_summaries_by_season(season:str=None) -> List[GameSummaryCreate]:
                         'away_team_abb': 'unknown',
                         'away_score': 0,
                         'away_players': [],
-                        'game_datetime': datetime(game_date.year, game_date.month, game_date.day, 19, 0, tzinfo=ZoneInfo("America/New_York")),
+                        'game_datetime': datetime(game_date.year, game_date.month, game_date.day, 11, 0, 0, tzinfo=ZoneInfo("America/New_York")),
                         'status_id': 3 if game_date < datetime.now() else 1,
                         'status_text': 'Final' if game_date < datetime.now() else 'h:mm pm/am ET',
                         'sequence': 100,
@@ -100,14 +100,14 @@ def fetch_game_summaries_by_season(season:str=None) -> List[GameSummaryCreate]:
             game_summary_creates.append({
                         'game_id': game_id,
                         'home_team_id': home_team["TEAM_ID"].iloc[0],
-                        'home_team_abb': home_team["TEAM_ABBREVIATION"].iloc[0],
+                        'home_team_abb': home_team["TEAM_ABBREVIATION"].iloc[0] if home_team["TEAM_ABBREVIATION"].iloc[0] else 'unknown',
                         'home_score': home_team["PTS"].iloc[0] if home_team["PTS"].iloc[0] else 0,
                         'home_players': [],
                         'away_team_id': away_team["TEAM_ID"].iloc[0],
-                        'away_team_abb': away_team["TEAM_ABBREVIATION"].iloc[0],
+                        'away_team_abb': away_team["TEAM_ABBREVIATION"].iloc[0] if away_team["TEAM_ABBREVIATION"].iloc[0] else 'unknown',
                         'away_score': away_team["PTS"].iloc[0] if away_team["PTS"].iloc[0] else 0,
                         'away_players': [],
-                        'game_datetime': datetime(game_date.year, game_date.month, game_date.day, 19, 0, tzinfo=ZoneInfo("America/New_York")),
+                        'game_datetime': datetime(game_date.year, game_date.month, game_date.day, 11, 0, 0, tzinfo=ZoneInfo("America/New_York")),
                         'status_id': 3 if game_date < datetime.now() else 1,
                         'status_text': 'Final' if game_date < datetime.now() else 'h:mm pm/am ET',
                         'sequence': 1,
@@ -194,7 +194,7 @@ def fetch_live_game_summaries(game_ids: List[str]) -> List[GameSummaryCreate]:
 def _convert_game_date_to_datetime(status_id: int, status_text: str, game_date: datetime) -> datetime:
     """status_text を基にgame_date に時間情報を付加します.  
     付加すべき情報が無かった場合や時間情報の取得に失敗した場合はそのままの日付情報を返します."""
-    game_datetime = datetime(game_date.year, game_date.month, game_date.day, game_date.hour, game_date.minute, tzinfo=game_date.tzinfo)
+    game_datetime = datetime(game_date.year, game_date.month, game_date.day, 11, 0, tzinfo=game_date.tzinfo)
     if status_id == 1:
         status_text = status_text.strip()
         formatted_time_str = re.match(r"(\d{1,2}:\d{2}\s*(am|pm))\s*ET", status_text, re.IGNORECASE)

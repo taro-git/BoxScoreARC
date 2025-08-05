@@ -8,8 +8,8 @@ export const BoxScoreStatusMessage = {
 export type BoxScoreStatusMessage = typeof BoxScoreStatusMessage[keyof typeof BoxScoreStatusMessage];
 
 export interface ScheduledBoxScoreStatus {
-    game_id: number
-    error_message?: string
+    gameId: number
+    errorMessage?: string
     progress: number
     status: BoxScoreStatusMessage
 }

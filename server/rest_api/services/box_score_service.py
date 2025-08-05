@@ -114,11 +114,11 @@ class BoxScoreCreateMaker():
 def fetch_box_score(game_id: str, box_score_status: ScheduledBoxScoreStatus) -> BoxScoreCreate:
     """指定の game_id の PlayByPlay を nba_api から取得し、BoxScoreCreate クラスを生成します."""
     play_by_play_v2 = playbyplayv2.PlayByPlayV2(game_id=game_id)
-    box_score_status.progress = 7
+    box_score_status.progress = 36
     box_score_status.save()
     play_by_play = play_by_play_v2.play_by_play.get_data_frame()
     players = fetch_player_on_game(game_id)
-    box_score_status.progress = 24
+    box_score_status.progress = 39
     box_score_status.save()
     return _convert_play_by_play_to_box_score_create(game_id, play_by_play, players, box_score_status)
 
@@ -142,7 +142,7 @@ def _convert_play_by_play_to_box_score_create(
     length_of_play_by_play = len(play_by_play)
     change_period_flag = False
     for i, one_play in enumerate(play_by_play.itertuples()):
-        progressing = 24 + round((i + 1)/length_of_play_by_play*75)
+        progressing = 39 + round((i + 1)/length_of_play_by_play*60)
         if box_score_status.progress + 4 < progressing:
             box_score_status.progress = progressing
             box_score_status.save()
@@ -217,7 +217,7 @@ def _convert_play_by_play_to_box_score_create(
                     box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_home_player_id,
-                        is_home_player,
+                        True,
                         ['plusminus'],
                         [score_diff if is_home_player else -score_diff],
                     )
@@ -225,7 +225,7 @@ def _convert_play_by_play_to_box_score_create(
                     box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_away_player_id,
-                        not is_home_player,
+                        False,
                         ['plusminus'],
                         [-score_diff if is_home_player else score_diff],
                     )
@@ -260,7 +260,7 @@ def _convert_play_by_play_to_box_score_create(
                     box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_home_player_id,
-                        is_home_player,
+                        True,
                         ['plusminus'],
                         [score_diff if is_home_player else -score_diff],
                     )
@@ -268,7 +268,7 @@ def _convert_play_by_play_to_box_score_create(
                     box_score_create_maker.append_box_score_data(
                         elapsed_seconds,
                         on_court_away_player_id,
-                        not is_home_player,
+                        False,
                         ['plusminus'],
                         [-score_diff if is_home_player else score_diff],
                     )
@@ -420,14 +420,18 @@ def _update_on_court_player_id(
         period_start_seconds = 12 * 60 * (period - 1)
     else:
         period_start_seconds = 4 * 12 * 60 + 5 * 60 * (period - 5)
-    box_score_traditional_v3 = boxscoretraditionalv3.BoxScoreTraditionalV3(
-        game_id=game_id,
-        start_period="0",
-        start_range=str(period_start_seconds * 10),
-        end_period="0",
-        end_range=str((period_start_seconds + elapsed_seconds_untill_first_play) * 10),
-        range_type="2",
-    )
+    try:
+        box_score_traditional_v3 = boxscoretraditionalv3.BoxScoreTraditionalV3(
+            game_id=game_id,
+            start_period="0",
+            start_range=str(period_start_seconds * 10),
+            end_period="0",
+            end_range=str((period_start_seconds + elapsed_seconds_untill_first_play) * 10),
+            range_type="2",
+        )
+    except Exception as e:
+        print("BoxScoreTraditionalV3 でエラー:", e)
+        return { 'home': [], 'away': [] }
     try:
         player_stats = box_score_traditional_v3.player_stats.get_data_frame()
     except Exception as e:
@@ -468,49 +472,53 @@ def _update_on_court_player_id(
 
         # headers はそのまま使う（length = expected_col_count）
         player_stats = DataFrame(trimmed_data, columns=headers)
-    home_player_stats = player_stats[
-        (player_stats["teamId"] == home_team_id) &
-        (player_stats["minutes"].apply(_convert_clock_to_seconds) >= elapsed_seconds_untill_first_play)
-    ]
-    away_player_stats = player_stats[
-        (player_stats["teamId"] == away_team_id) &
-        (player_stats["minutes"].apply(_convert_clock_to_seconds) >= elapsed_seconds_untill_first_play)
-    ]
-
     home_player_id = []
-    if len(home_player_stats) == 5:
-        home_player_id = home_player_stats["personId"].tolist()
-    elif len(home_player_stats["minutes"].unique()) == 3:
-        home_seconds_with_ended_period = home_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
-        home_player_id = home_player_stats[
-            (home_player_stats["minutes"].apply(_convert_clock_to_seconds) == elapsed_seconds_untill_first_play) |
-            (home_player_stats["minutes"].apply(_convert_clock_to_seconds) == home_seconds_with_ended_period)
-        ]["personId"].tolist()
-    elif len(home_player_stats["minutes"].unique()) == 1:
-        home_player_id = home_player_stats[home_player_stats["personId"].isin(on_court_home_player_id)]["personId"].tolist()
-    elif len(home_player_stats["minutes"].unique()) == 2:
-        home_seconds_with_ended_period = home_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
-        home_player_id = home_player_stats[
-            (home_player_stats["minutes"].apply(_convert_clock_to_seconds) == home_seconds_with_ended_period) |
-            (home_player_stats["personId"].isin(on_court_home_player_id))
-        ]["personId"].tolist()
     away_player_id = []
-    if len(away_player_stats) == 5:
-        away_player_id = away_player_stats["personId"].tolist()
-    elif len(away_player_stats["minutes"].unique()) == 3:
-        away_seconds_with_ended_period = away_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
-        away_player_id = away_player_stats[
-            (away_player_stats["minutes"].apply(_convert_clock_to_seconds) == elapsed_seconds_untill_first_play) |
-            (away_player_stats["minutes"].apply(_convert_clock_to_seconds) == away_seconds_with_ended_period)
-        ]["personId"].tolist()
-    elif len(away_player_stats["minutes"].unique()) == 1:
-        away_player_id = away_player_stats[away_player_stats["personId"].isin(on_court_away_player_id)]["personId"].tolist()
-    elif len(away_player_stats["minutes"].unique()) == 2:
-        away_seconds_with_ended_period = away_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
-        away_player_id = away_player_stats[
-            (away_player_stats["minutes"].apply(_convert_clock_to_seconds) == away_seconds_with_ended_period) |
-            (away_player_stats["personId"].isin(on_court_away_player_id))
-        ]["personId"].tolist()
+    try:
+        home_player_stats = player_stats[
+            (player_stats["teamId"] == home_team_id) &
+            (player_stats["minutes"].apply(_convert_clock_to_seconds) >= elapsed_seconds_untill_first_play)
+        ]
+        away_player_stats = player_stats[
+            (player_stats["teamId"] == away_team_id) &
+            (player_stats["minutes"].apply(_convert_clock_to_seconds) >= elapsed_seconds_untill_first_play)
+        ]
+        
+        if len(home_player_stats) == 5:
+            home_player_id = home_player_stats["personId"].tolist()
+        elif len(home_player_stats["minutes"].unique()) == 3:
+            home_seconds_with_ended_period = home_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
+            home_player_id = home_player_stats[
+                (home_player_stats["minutes"].apply(_convert_clock_to_seconds) == elapsed_seconds_untill_first_play) |
+                (home_player_stats["minutes"].apply(_convert_clock_to_seconds) == home_seconds_with_ended_period)
+            ]["personId"].tolist()
+        elif len(home_player_stats["minutes"].unique()) == 1:
+            home_player_id = home_player_stats[home_player_stats["personId"].isin(on_court_home_player_id)]["personId"].tolist()
+        elif len(home_player_stats["minutes"].unique()) == 2:
+            home_seconds_with_ended_period = home_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
+            home_player_id = home_player_stats[
+                (home_player_stats["minutes"].apply(_convert_clock_to_seconds) == home_seconds_with_ended_period) |
+                (home_player_stats["personId"].isin(on_court_home_player_id))
+            ]["personId"].tolist()
+
+        if len(away_player_stats) == 5:
+            away_player_id = away_player_stats["personId"].tolist()
+        elif len(away_player_stats["minutes"].unique()) == 3:
+            away_seconds_with_ended_period = away_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
+            away_player_id = away_player_stats[
+                (away_player_stats["minutes"].apply(_convert_clock_to_seconds) == elapsed_seconds_untill_first_play) |
+                (away_player_stats["minutes"].apply(_convert_clock_to_seconds) == away_seconds_with_ended_period)
+            ]["personId"].tolist()
+        elif len(away_player_stats["minutes"].unique()) == 1:
+            away_player_id = away_player_stats[away_player_stats["personId"].isin(on_court_away_player_id)]["personId"].tolist()
+        elif len(away_player_stats["minutes"].unique()) == 2:
+            away_seconds_with_ended_period = away_player_stats["minutes"].apply(_convert_clock_to_seconds).max()
+            away_player_id = away_player_stats[
+                (away_player_stats["minutes"].apply(_convert_clock_to_seconds) == away_seconds_with_ended_period) |
+                (away_player_stats["personId"].isin(on_court_away_player_id))
+            ]["personId"].tolist()
+    except:
+        pass
 
     return { 'home': home_player_id, 'away': away_player_id }
 
