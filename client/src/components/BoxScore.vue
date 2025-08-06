@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps, ref, watch } from 'vue'
+import { computed, defineProps, onUnmounted, ref, watch } from 'vue'
 
 import { BoxScoreApi } from '../apis/boxScore.api';
 import { GameSummariesApi } from '../apis/gameSummaries.api';
@@ -93,13 +93,21 @@ const pollScheduledBoxScoreStatus = async () => {
                 return
             }
         }
-        setTimeout(pollScheduledBoxScoreStatus, 1000)
+        pollingTimeoutId = setTimeout(pollScheduledBoxScoreStatus, 1000)
     } catch (error) {
         errorMessage.value = String(error)
     } finally {
         isLoading.value = false
     }
 }
+
+let pollingTimeoutId: ReturnType<typeof setTimeout> | null = null
+onUnmounted(() => {
+    if (pollingTimeoutId) {
+        clearTimeout(pollingTimeoutId)
+        pollingTimeoutId = null
+    }
+})
 
 pollScheduledBoxScoreStatus()
 </script>
