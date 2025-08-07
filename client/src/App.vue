@@ -3,12 +3,6 @@
         <v-app-bar color="base" :elevation="2">
             <template v-slot:prepend>
                 <v-app-bar-nav-icon @click.stop="open = !open"></v-app-bar-nav-icon>
-                <v-speed-dial v-model="open" location="left center" transition="slide-x-transition" activator="parent">
-                    <v-btn v-for="item in items" :key="item.routeName" :value="item.routeName"
-                        @click="navigationClick(item.routeName)" size="40" icon>
-                        <v-icon size="25">{{ item.prependIcon }}</v-icon>
-                    </v-btn>
-                </v-speed-dial>
             </template>
             <img v-if="selectedItemRouteName === ROUTE_NAMES.GAME" class="mr-5" :style="{ 'width': '2.5rem' }"
                 :src="gameSummary.awayTeam.logo" />
@@ -24,6 +18,18 @@
                 </v-btn>
             </template>
         </v-app-bar>
+
+        <v-navigation-drawer class="bg-lighten" v-model="open" :location="'top'">
+            <v-list v-model:selected="selectedItemRouteName" mandatory>
+                <v-list-item v-for="item in items" :key="item.routeName" :value="item.routeName"
+                    @click="navigationClick(item.routeName)">
+                    <template #prepend>
+                        <v-icon>{{ item.prependIcon }}</v-icon>
+                    </template>
+                    <v-list-item-title>{{ item.title }}</v-list-item-title>
+                </v-list-item>
+            </v-list>
+        </v-navigation-drawer>
 
         <v-dialog v-model="dialog">
             <v-card>
@@ -66,9 +72,9 @@ const appBarTitles = computed(() => {
 })
 const items = [
     {
-        title: appBarTitles.value[ROUTE_NAMES.ANALYSIS],
-        routeName: ROUTE_NAMES.ANALYSIS,
-        prependIcon: 'mdi-chart-bar',
+        title: appBarTitles.value[ROUTE_NAMES.HOME],
+        routeName: ROUTE_NAMES.HOME,
+        prependIcon: 'mdi-view-dashboard',
     },
     {
         title: appBarTitles.value[ROUTE_NAMES.GAMES],
@@ -76,9 +82,9 @@ const items = [
         prependIcon: 'mdi-basketball',
     },
     {
-        title: appBarTitles.value[ROUTE_NAMES.HOME],
-        routeName: ROUTE_NAMES.HOME,
-        prependIcon: 'mdi-view-dashboard',
+        title: appBarTitles.value[ROUTE_NAMES.ANALYSIS],
+        routeName: ROUTE_NAMES.ANALYSIS,
+        prependIcon: 'mdi-chart-bar',
     },
 ]
 const router = useRouter()
