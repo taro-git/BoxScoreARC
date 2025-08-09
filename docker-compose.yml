@@ -52,6 +52,10 @@ services:
     build:
       context: ./client
       target: prod
+    volumes:
+      - client_prod_temp:/var/cache/nginx
+      - client_prod_temp:/var/run
+    read_only: true
     restart: "always"
     environment:
       - TZ=Asia/Tokyo
@@ -93,6 +97,9 @@ services:
     build:
       context: ./server
       target: prod
+    volumes:
+      - server_prod_temp:/tmp
+    read_only: true
     restart: "always"
     environment:
       - PYTHONPATH=/app
@@ -125,4 +132,6 @@ services:
       - postgresql_data:/var/lib/postgresql/data
 
 volumes:
+  client_prod_temp:
+  server_prod_temp:
   postgresql_data:
