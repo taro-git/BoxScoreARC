@@ -62,7 +62,7 @@ services:
     labels:
       - "traefik.enable=true"
       # MYTODO: ドメイン名は正式なドメインを取得後に修正予定 
-      - "traefik.http.routers.client.rule=(Host(`localhost`) || Host(`ubuntuservert01.tail535db5.ts.net` || Host(`boxscorearc.f5.si`))) && PathPrefix(`/view/`)"
+      - "traefik.http.routers.client.rule=(Host(`localhost`) || Host(`ubuntuservert01.tail535db5.ts.net`) || Host(`boxscorearc.f5.si`)) && PathPrefix(`/view/`)"
       - "traefik.http.routers.client.entrypoints=websecure"
       - "traefik.http.routers.client.tls=true"
       - "traefik.http.routers.client.middlewares=secure-headers@docker"
