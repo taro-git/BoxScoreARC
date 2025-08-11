@@ -39,6 +39,11 @@ const statusText = ref(props.gameSummary.statusText)
 if (!props.scoreDisplay && props.gameSummary.statusId == 3) {
     statusText.value = 'Final'
 }
+if (props.gameSummary.statusId == 1) {
+    const hour = props.gameSummary.gameDatetime.getHours().toString().padStart(2, '0')
+    const minute = props.gameSummary.gameDatetime.getMinutes().toString().padStart(2, '0')
+    statusText.value = `${hour}:${minute}`
+}
 
 const selectGame = () => {
     Object.assign(selectedGame.gameSummary, props.gameSummary)
