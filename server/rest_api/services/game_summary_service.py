@@ -144,10 +144,10 @@ def fetch_game_summaries_by_date(date_est: datetime | None) -> List[GameSummaryC
             'away_team_abb': away_team_line_score["TEAM_ABBREVIATION"].iloc[0],
             'away_score': away_score if away_score else 0,
             'away_players': [],
-            'game_datetime': _convert_game_date_to_datetime(
+            'game_datetime': _add_time_info_to_game_date(
                 filtered_game_header["GAME_STATUS_ID"].iloc[0],
                 filtered_game_header["GAME_STATUS_TEXT"].iloc[0],
-                game_date
+                datetime(game_date.year, game_date.month, game_date.day, 11, 0, 0, tzinfo=ZoneInfo("America/New_York"))
             ),
             'status_id': filtered_game_header["GAME_STATUS_ID"].iloc[0],
             'status_text': filtered_game_header["GAME_STATUS_TEXT"].iloc[0],
@@ -174,7 +174,7 @@ def update_players_in_game_summary_by_game_id(game_id:str) -> GameSummaryCreate:
         'away_team_abb': game_summary_from_db.away_team.abbreviation,
         'away_score': game_summary_from_db.away_score,
         'away_players': players['away_players'],
-        'game_datetime': _convert_game_date_to_datetime(
+        'game_datetime': _add_time_info_to_game_date(
             game_summary_from_db.status_id,
             game_summary_from_db.status_text,
             game_summary_from_db.game_datetime
@@ -191,10 +191,9 @@ def fetch_live_game_summaries(game_ids: List[str]) -> List[GameSummaryCreate]:
     return game_summary_creates
 
 
-def _convert_game_date_to_datetime(status_id: int, status_text: str, game_date: datetime) -> datetime:
+def _add_time_info_to_game_date(status_id: int, status_text: str, game_date: datetime) -> datetime:
     """status_text を基にgame_date に時間情報を付加します.  
     付加すべき情報が無かった場合や時間情報の取得に失敗した場合はそのままの日付情報を返します."""
-    game_datetime = datetime(game_date.year, game_date.month, game_date.day, 11, 0, tzinfo=game_date.tzinfo)
     if status_id == 1:
         status_text = status_text.strip()
         formatted_time_str = re.match(r"(\d{1,2}:\d{2}\s*(am|pm))\s*ET", status_text, re.IGNORECASE)
@@ -205,6 +204,8 @@ def _convert_game_date_to_datetime(status_id: int, status_text: str, game_date: 
             "%Y-%m-%d %I:%M %p"
         ).replace(tzinfo=game_date.tzinfo)
         game_datetime = game_time.replace(year=game_date.year, month=game_date.month, day=game_date.day)
+    else:
+        game_datetime = game_date
     return game_datetime
 
 ##
