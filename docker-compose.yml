@@ -61,7 +61,7 @@ services:
       - TZ=Asia/Tokyo
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.client.rule=(Host(`localhost`) || Host(`ubuntuservert01.tail535db5.ts.net`) || Host(`boxscorearc.f5.si`)) && PathPrefix(`/view/`)"
+      - "traefik.http.routers.client.rule=(Host(`localhost`) || Host(`ubuntuservert01.tail535db5.ts.net`) || Host(`www.boxscorearc.f5.si`)) && PathPrefix(`/view/`)"
       - "traefik.http.routers.client.entrypoints=websecure"
       - "traefik.http.routers.client.tls=true"
       - "traefik.http.routers.client.middlewares=secure-headers@docker"
@@ -111,7 +111,7 @@ services:
       - postgres
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=(Host(`localhost`) || Host(`ubuntuservert01.tail535db5.ts.net`) || Host(`boxscorearc.f5.si`)) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.api.rule=(Host(`localhost`) || Host(`ubuntuservert01.tail535db5.ts.net`) || Host(`www.boxscorearc.f5.si`)) && PathPrefix(`/api/`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.middlewares=secure-headers@docker"
