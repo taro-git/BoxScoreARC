@@ -135,7 +135,7 @@ services:
     volumes:
       - postgresql_data:/var/lib/postgresql/data
 
-volumes:
+volumes: # /var/lib/docker/volumes/
   traefik_logs:
   client_prod_temp:
   server_prod_temp:

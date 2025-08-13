@@ -4,12 +4,12 @@
             <template v-slot:prepend>
                 <v-app-bar-nav-icon @click.stop="open = !open"></v-app-bar-nav-icon>
             </template>
-            <img v-if="selectedItemRouteName === ROUTE_NAMES.GAME" class="mr-5" :style="{ 'width': '2.5rem' }"
+            <img v-if="selectedItemRouteName === RouteName.Game" class="mr-5" :style="{ 'width': '2.5rem' }"
                 :src="gameSummary.awayTeam.logo" />
-            <span v-if="selectedItemRouteName === ROUTE_NAMES.GAME" class="text-h5">
+            <span v-if="selectedItemRouteName === RouteName.Game" class="text-h5">
                 {{ gameSummary.awayScore }} - {{ gameSummary.homeScore }}
             </span>
-            <img v-if="selectedItemRouteName === ROUTE_NAMES.GAME" class="ml-5" :style="{ 'width': '2.5rem' }"
+            <img v-if="selectedItemRouteName === RouteName.Game" class="ml-5" :style="{ 'width': '2.5rem' }"
                 :src="gameSummary.homeTeam.logo" />
             <v-app-bar-title v-else>{{ selectedItemTitle }}</v-app-bar-title>
             <template v-slot:append>
@@ -56,34 +56,40 @@ import { useRouter, useRoute } from 'vue-router'
 
 import Settings from './components/Settings.vue'
 import { baseToAccent, baseToDarken, baseToLighten, type RgbaColor } from './core/colorControl'
-import { ROUTE_NAMES } from './router'
+import { RouteName } from './router'
 import { gameStore } from './store/game'
 import { settingsStore } from './store/settings'
 
 const open = ref(false)
 const gameSummary = gameStore().gameSummary
-const appBarTitles = computed(() => {
-    return {
-        [ROUTE_NAMES.HOME]: 'Home',
-        [ROUTE_NAMES.GAMES]: 'Games',
-        [ROUTE_NAMES.GAME]: '',
-        [ROUTE_NAMES.ANALYSIS]: 'Analysis',
+function toAppBarTitle(routeName: RouteName) {
+    switch (routeName) {
+        case RouteName.Home:
+            return 'Home'
+        case RouteName.Games:
+            return 'Games'
+        case RouteName.Game:
+            return ''
+        case RouteName.Analysis:
+            return 'Analysis'
+        default:
+            'Invalid URL'
     }
-})
+}
 const items = [
     {
-        title: appBarTitles.value[ROUTE_NAMES.HOME],
-        routeName: ROUTE_NAMES.HOME,
+        title: toAppBarTitle(RouteName.Home),
+        routeName: RouteName.Home,
         prependIcon: 'mdi-view-dashboard',
     },
     {
-        title: appBarTitles.value[ROUTE_NAMES.GAMES],
-        routeName: ROUTE_NAMES.GAMES,
+        title: toAppBarTitle(RouteName.Games),
+        routeName: RouteName.Games,
         prependIcon: 'mdi-basketball',
     },
     {
-        title: appBarTitles.value[ROUTE_NAMES.ANALYSIS],
-        routeName: ROUTE_NAMES.ANALYSIS,
+        title: toAppBarTitle(RouteName.Analysis),
+        routeName: RouteName.Analysis,
         prependIcon: 'mdi-chart-bar',
     },
 ]
@@ -93,8 +99,24 @@ const navigationClick = (routeName: string) => {
     router.push({ name: routeName })
 }
 const route = useRoute()
-const selectedItemRouteName = computed(() => route.fullPath.split('/')[1])
-const selectedItemTitle = computed(() => appBarTitles.value[selectedItemRouteName.value] ?? 'Invalid Path')
+const selectedItemRouteName = computed<RouteName>(() => {
+    const path_list = route.fullPath.split('/').slice(1)
+    switch (path_list[0]) {
+        case RouteName.Home:
+            return RouteName.Home
+        case RouteName.Analysis:
+            return RouteName.Analysis
+        case RouteName.Games:
+            if (path_list.length == 2 && /^\d{10}$/.test(path_list[1])) {
+                return RouteName.Game
+            } else {
+                return RouteName.Games
+            }
+        default:
+            return RouteName.Invalid
+    }
+})
+const selectedItemTitle = computed(() => toAppBarTitle(selectedItemRouteName.value))
 
 const dialog = ref(false)
 const settings = settingsStore()

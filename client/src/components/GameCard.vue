@@ -1,6 +1,7 @@
 <template>
     <div :style="{ 'background-color': 'white' }">
-        <router-link :to="{ name: 'game', params: { gameId: gameSummary.gameId } }" class="card" @click="selectGame">
+        <router-link :to="{ name: RouteName.Game, params: { gameId: gameSummary.gameId } }" class="card"
+            @click="selectGame">
             <div class="status">{{ statusText }}</div>
             <div v-if="fullView" class="category">{{ gameSummary.gameCategory }}</div>
             <div class="teams">
@@ -23,8 +24,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import { RouteName } from '../router/index'
 import { gameStore } from '../store/game';
-
 import { GameSummary } from '../types/GameSummary';
 
 const props = defineProps<{

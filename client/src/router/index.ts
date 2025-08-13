@@ -5,33 +5,36 @@ import GameView from '../views/GameView.vue'
 import AnalysisView from '../views/AnalysisView.vue'
 import HomeView from '../views/HomeView.vue'
 
-export const ROUTE_NAMES = {
-    HOME: 'home',
-    GAMES: 'games',
-    GAME: 'game',
-    ANALYSIS: 'analysis',
-}
+export const RouteName = {
+    Home: 'home',
+    Games: 'games',
+    Game: 'games/:gameId',
+    Analysis: 'analysis',
+    Invalid: 'invalid url'
+} as const
+
+export type RouteName = (typeof RouteName)[keyof typeof RouteName]
 
 const routes: Array<RouteRecordRaw> = [
     {
-        path: `/${ROUTE_NAMES.HOME}`,
-        name: ROUTE_NAMES.HOME,
+        path: `/${RouteName.Home}`,
+        name: RouteName.Home,
         component: HomeView
     },
     {
-        path: `/${ROUTE_NAMES.GAMES}`,
-        name: ROUTE_NAMES.GAMES,
+        path: `/${RouteName.Games}`,
+        name: RouteName.Games,
         component: GamesView
     },
     {
-        path: `/${ROUTE_NAMES.GAME}/:gameId`,
-        name: ROUTE_NAMES.GAME,
+        path: `/${RouteName.Game}`,
+        name: RouteName.Game,
         component: GameView,
         props: true
     },
     {
-        path: `/${ROUTE_NAMES.ANALYSIS}`,
-        name: ROUTE_NAMES.ANALYSIS,
+        path: `/${RouteName.Analysis}`,
+        name: RouteName.Analysis,
         component: AnalysisView
     },
 ]
