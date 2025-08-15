@@ -42,8 +42,9 @@ services:
   client-dev:
     profiles: ["dev"]
     build:
-      context: ./client
-      target: dev
+      context: .
+      dockerfile: docker/Dockerfile
+      target: client-dev
     volumes:
       - ./client:/app
       - /app/node_modules
@@ -59,8 +60,9 @@ services:
   client-prod:
     profiles: ["prod"]
     build:
-      context: ./client
-      target: prod
+      context: .
+      dockerfile: docker/Dockerfile
+      target: client-prod
     volumes:
       - client_prod_temp:/var/cache/nginx
       - client_prod_temp:/var/run
@@ -78,12 +80,17 @@ services:
   server-dev:
     profiles: ["dev"]
     build:
-      context: ./server
-      target: dev
+      context: .
+      dockerfile: docker/Dockerfile
+      target: server-dev
     volumes:
+      - server_temp:/tmp
       - ./server:/app
     restart: "always"
     environment:
+      - TZ=Asia/Tokyo
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -101,13 +108,17 @@ services:
   server-prod:
     profiles: ["prod"]
     build:
-      context: ./server
-      target: prod
+      context: .
+      dockerfile: docker/Dockerfile
+      target: server-prod
     volumes:
-      - server_prod_temp:/tmp
+      - server_temp:/tmp
     read_only: true
     restart: "always"
     environment:
+      - TZ=Asia/Tokyo
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -122,6 +133,28 @@ services:
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.routers.api.middlewares=secure-headers@docker"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
+
+  db-manager:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: db-manager
+    volumes:
+      - server_temp:/tmp
+    restart: "always"
+    environment:
+      - TZ=Asia/Tokyo
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - DB_MANAGE=True
+      - PYTHONPATH=/app
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=box_score_arc
+      - DB_USER=box_score_arc_user
+      - DB_PASSWORD=box_score_arc_password
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:15
@@ -138,5 +171,5 @@ services:
 volumes: # /var/lib/docker/volumes/
   traefik_logs:
   client_prod_temp:
-  server_prod_temp:
+  server_temp:
   postgresql_data:

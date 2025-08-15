@@ -71,6 +71,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'box_score_arc.wsgi.application'
 
 is_dev_mode = 'runserver' in sys.argv
+is_db_manage_mode = os.environ.get('DB_MANAGE', 'False') == 'True'
 
 DEBUG = is_dev_mode
 

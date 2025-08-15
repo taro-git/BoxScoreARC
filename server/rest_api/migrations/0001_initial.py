@@ -32,13 +32,6 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='SchedulerLock',
-            fields=[
-                ('name', models.CharField(primary_key=True, serialize=False)),
-                ('locked_at', models.DateTimeField(auto_now=True)),
-            ],
-        ),
-        migrations.CreateModel(
             name='Team',
             fields=[
                 ('team_id', models.IntegerField(primary_key=True, serialize=False)),
