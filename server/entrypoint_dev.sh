@@ -4,12 +4,8 @@ set -e
 echo "Wait for PostgreSQL to become available..."
 python /app/box_score_arc/wait_for_postgres.py
 
-echo "Removing old migrations"
-find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
-find . -path "*/migrations/*.pyc" -delete
 echo "Making migrations"
-python manage.py migrate --fake rest_api zero
-python manage.py makemigrations
+python manage.py makemigrations --noinput
 
 echo "Applying database migrations..."
 python manage.py migrate --noinput
