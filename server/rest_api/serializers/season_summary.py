@@ -42,6 +42,8 @@ class SeasonSummaryCreate(TypedDict):
 class RegularSeasonTeamStatsSerializer(serializers.ModelSerializer):
     reb = serializers.SerializerMethodField()
     eff = serializers.SerializerMethodField()
+    team_abbreviation = serializers.SerializerMethodField()
+    team_logo = serializers.SerializerMethodField()
 
     class Meta:
         model = RegularSeasonTeamStats
@@ -52,6 +54,12 @@ class RegularSeasonTeamStatsSerializer(serializers.ModelSerializer):
     
     def get_eff(self, obj):
         return obj.eff
+    
+    def get_team_abbreviation(self, obj):
+        return obj.team_abbreviation
+    
+    def get_team_logo(self, obj):
+        return obj.team_logo
 
 
 class SeasonSummarySerializer(serializers.ModelSerializer):

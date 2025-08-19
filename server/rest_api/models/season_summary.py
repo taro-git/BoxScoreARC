@@ -40,6 +40,12 @@ class RegularSeasonTeamStats(models.Model):
     @property
     def eff(self):
         return (self.pts + self.reb + self.ast + self.stl + self.blk) - ((self.fga - self.fg) + (self.fta - self.ft) + self.to)
+    @property
+    def team_abbreviation(self):
+        return self.team_id.abbreviation
+    @property
+    def team_logo(self):
+        return self.team_id.logo
 
     class Meta:
         constraints = [
