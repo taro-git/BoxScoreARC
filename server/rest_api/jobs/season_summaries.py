@@ -1,0 +1,101 @@
+import time
+from datetime import datetime, timedelta
+
+from django.utils.timezone import make_aware
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
+
+from rest_api.models.game_summary import GameSummary
+from rest_api.models.season_summary import SeasonSummary
+from rest_api.services.game_summary_service import get_regular_season_team_ids_by_season
+from rest_api.services.season_summary_service import fetch_regular_season_team_stats, upsert_season_summary, update_regular_season_team_stats
+
+
+def initialize_season_summaries(scheduler: BackgroundScheduler):
+    """season summary の初期化をします.  
+    8 時間ごとにnba_api をたたいて、season summary を DB にインサートします."""
+    while scheduler.get_job('initialize_game_summaries') is not None:
+        print('[scheduler] waiting to finish initializing game summary for initializing season summary')
+        time.sleep(60)
+    print('[scheduler] add initialize_season_summaries')
+    scheduler.add_job(
+        func=lambda: _initialize_season_summaries(scheduler),
+        trigger=IntervalTrigger(hours=8),
+        id='initialize_season_summaries',
+        next_run_time=datetime.now(),
+        replace_existing=True,
+    )
+
+
+def _initialize_season_summaries(scheduler: BackgroundScheduler):
+    """今年から来年にかけてのシーズンから、1990-91シーズンまでを準備します.  
+    1回の実行でDBに存在しないシーズン1つについてfetch, upsert を実行します."""
+    years = list(range(datetime.now().year, 1989, -1))
+    for year in years:
+        season = f'{year}-{(year + 1) % 100:02d}'
+        print(f'[scheduler] initialize season summary, season is {season}')
+        season_summary = SeasonSummary.objects.filter(season=season)
+        if not season_summary.exists():
+            team_ids = get_regular_season_team_ids_by_season(season)
+            teams = []
+            for team_id in team_ids:
+                try:
+                    teams.append(fetch_regular_season_team_stats(season, team_id))
+                    print(f'[scheduler] success fetch_regular_season_team_stats, season is {season}, team_id is {team_id}')
+                    time.sleep(2*60)
+                except:
+                    print(f'[scheduler] error in fetch_regular_season_team_stats, season is {season}, team_id is {team_id}')
+                    break
+            try:
+                if len(teams) > 0:
+                    upsert_season_summary({'season': season, 'teams': teams})
+                    print(f'[scheduler] upsert season summary, season is {season}')
+                    return
+                else:
+                    print(f'[scheduler] no data about team stats in the season: {season}')
+            except:
+                print(f'[scheduler] error in upsert_season_summary, season is {season}')
+    print('[scheduler] remove initialize_season_summaries')
+    scheduler.remove_job('initialize_season_summaries')
+    return
+    
+
+def daily_season_summary_job(scheduler: BackgroundScheduler):
+    """日次で 00:00 に実行する処理を定義します.  
+    nba_api をたたいて、前日の試合結果を season summary に反映させます."""
+    print('[scheduler] add daily job: season summary')
+    scheduler.add_job(
+        func=_daily_season_summary_jobs,
+        trigger=CronTrigger(hour=0, minute=0),
+        id='daily_season_summary_job',
+        replace_existing=True,
+    )
+
+
+def _daily_season_summary_jobs():
+    """nba_api をたたいて、前日の試合結果を踏まえた season summary を upsert します.  """
+    print(f'[scheduler] start daily job at {datetime.now()}: season summary')
+    today = datetime.now()
+    game_summaries = GameSummary.objects.filter(game_datetime__range=(make_aware(today - timedelta(days=1)), make_aware(today)), status_id=3)
+    regular_season_game_summaries = [game_summary for game_summary in game_summaries if game_summary.game_category == 'Regular Season']
+    for game_summary in regular_season_game_summaries:
+        if not SeasonSummary.objects.filter(season=game_summary.season).exists:
+            try:
+                upsert_season_summary({'season': game_summary.season, 'teams': []})
+            except:
+                print(f'[scheduler] error in upsert_season_summary, season is {game_summary.season}')
+                continue
+        season_summary = SeasonSummary.objects.filter(season=game_summary.season).first()
+        try:
+            regular_season_home_team_stats_create = fetch_regular_season_team_stats(game_summary.season, game_summary.home_team.team_id)
+            regular_season_away_team_stats_create = fetch_regular_season_team_stats(game_summary.season, game_summary.away_team.team_id)
+        except:
+            print(f'[scheduler] error in fetch_regular_season_team_stats, season is {game_summary.season}, team id is {game_summary.home_team.team_id} or {game_summary.away_team.team_id} ')
+        try:
+            update_regular_season_team_stats(season_summary, regular_season_home_team_stats_create)
+            update_regular_season_team_stats(season_summary, regular_season_away_team_stats_create)
+        except:
+            print(f'[scheduler] error in update_regular_season_team_stats, season is {game_summary.season}, team id is {game_summary.home_team.team_id} or {game_summary.away_team.team_id} ')
+        time.sleep(15*60)
+    print(f'[scheduler] finish daily job at {datetime.now()}: season summary')

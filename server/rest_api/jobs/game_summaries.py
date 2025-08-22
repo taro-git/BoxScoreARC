@@ -1,18 +1,17 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from django.utils.timezone import make_aware
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 
-from rest_api.models.game_summary import GameSummary
-from rest_api.services.game_summary_service import fetch_game_summaries_by_season, upsert_game_summary
+from rest_api.services.game_summary_service import fetch_game_summaries_by_season, upsert_game_summary, get_regular_season_team_ids_by_season
 
 
 def initialize_game_summaries(scheduler: BackgroundScheduler):
     """game summary の初期化をします.  
     15分ごとにnba_api をたたいて、game summary を DB にインサートします."""
+    print('[scheduler] add initialize_game_summaries')
     scheduler.add_job(
         func=lambda: _initialize_game_summaries(scheduler),
         trigger=IntervalTrigger(minutes=15),
@@ -27,12 +26,12 @@ def _initialize_game_summaries(scheduler: BackgroundScheduler):
     1回の実行でDBに存在しないシーズン1つについてfetch, upsert を実行します."""
     years = list(range(datetime.now().year, 1989, -1))
     for year in years:
-        season_start = make_aware(datetime(year, 10, 1))
-        season_end = make_aware(datetime(year+1, 9, 30, 23, 59, 59))
-        season_games = GameSummary.objects.filter(game_datetime__range=(season_start, season_end))
-        if not season_games.exists():
+        season = f"{year}-{(year + 1) % 100:02d}"
+        print(f'[scheduler] initializing game summaries, in {season}')
+        season_game_exists = len(get_regular_season_team_ids_by_season(season)) > 0
+        if not season_game_exists:
             try:
-                season = f"{year}-{(year + 1) % 100:02d}"
+                print(f'[scheduler] try to fetch and upsert game summaries, season is {season}')
                 game_summaries = fetch_game_summaries_by_season(season)
                 for game_summary in game_summaries:
                     try:
@@ -54,7 +53,7 @@ def daily_game_summary_job(scheduler: BackgroundScheduler):
     """日次で 00:00 に実行する処理を定義します.  
     1. nba_api をたたいて、当日以降の game summary を挿入・更新します.  
     2. 当日予定している試合の game summary を20分ごとに更新します.  """
-    print('[scheduler] start daily job: game summary')
+    print('[scheduler] add daily job: game summary')
     scheduler.add_job(
         func=lambda: _daily_game_summary_jobs(scheduler),
         trigger=CronTrigger(hour=0, minute=0),
@@ -64,8 +63,10 @@ def daily_game_summary_job(scheduler: BackgroundScheduler):
 
 
 def _daily_game_summary_jobs(scheduler: BackgroundScheduler):
+    print(f'[scheduler] start daily job at {datetime.now()}: game summary')
     _upsert_future_game_summary()
     _make_scheduler_to_update_live_game_summary(scheduler)
+    print(f'[scheduler] finish daily job at {datetime.now()}: game summary')
 
 
 def _upsert_future_game_summary():
@@ -80,10 +81,10 @@ def _upsert_future_game_summary():
             game_summaries = fetch_game_summaries_by_season(season)
             for game_summary in [game_summary for game_summary in game_summaries if game_summary['game_datetime'] > today]:
                 try:
-                    print(f'[scheduler] upsert game summary {game_summary}')
                     upsert_game_summary(game_summary)
                 except Exception as e:
-                    print(f'[scheduler] error in upsert_game_summary, game id is {game_summary["game_id"]}')
+                    print(f'[scheduler] error in upsert_game_summary, {game_summary["home_team_abb"]} vs. {game_summary["away_team_abb"]} at {game_summary["game_datetime"]}')
+            print(f'[scheduler] upsert game summaries {season}')
         except Exception as e:
             print(f'[scheduler] error in fetch in {season}. {e}')
     return
