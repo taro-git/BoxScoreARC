@@ -49,7 +49,7 @@ interface IRegularSeasonTeamStats {
 
 export interface ISeasonSummary {
     season: string,
-    regularSeasonTeamsStats: IRegularSeasonTeamStats[]
+    teams: IRegularSeasonTeamStats[]
 }
 
 export interface RegularSeasonTeamStats {
@@ -61,31 +61,31 @@ export interface RegularSeasonTeamStats {
     divisionRank: number,
     win: number,
     lose: number,
-    pct: number,
+    pct: string,
     gb: number,
 }
 
 export class SeasonSummary {
     season: string
-    regularSeasonTeamsStats: RegularSeasonTeamStats[]
+    teams: RegularSeasonTeamStats[]
 
     constructor(data?: ISeasonSummary) {
         this.season = data?.season ?? ''
-        this.regularSeasonTeamsStats = []
+        this.teams = []
         if (data) {
-            const westMaxDiff = data.regularSeasonTeamsStats.reduce((max, item) => {
+            const westMaxDiff = data.teams.reduce((max, item) => {
                 const diff = item.win - item.lose
                 return diff > max && item.conference == Conference.West ? diff : max
             }, -Infinity)
-            const eastMaxDiff = data.regularSeasonTeamsStats.reduce((max, item) => {
+            const eastMaxDiff = data.teams.reduce((max, item) => {
                 const diff = item.win - item.lose
                 return diff > max && item.conference == Conference.East ? diff : max
             }, -Infinity)
-            for (const regularSeasonTeamStats of data?.regularSeasonTeamsStats) {
+            for (const regularSeasonTeamStats of data?.teams) {
                 const win = regularSeasonTeamStats.win
                 const lose = regularSeasonTeamStats.lose
                 const maxDiff = regularSeasonTeamStats.conference == Conference.West ? westMaxDiff : eastMaxDiff
-                this.regularSeasonTeamsStats.push({
+                this.teams.push({
                     teamAbbreviation: regularSeasonTeamStats.teamAbbreviation,
                     teamLogo: regularSeasonTeamStats.teamLogo,
                     conference: regularSeasonTeamStats.conference,
@@ -94,7 +94,7 @@ export class SeasonSummary {
                     divisionRank: regularSeasonTeamStats.divisionRank,
                     win: win,
                     lose: lose,
-                    pct: win + lose > 0 ? Math.round(win / (win + lose) * 10) / 10 : 0,
+                    pct: win + lose > 0 ? (Math.round(win / (win + lose) * 1000) / 1000).toFixed(3).replace(/^0+/, "") : '0',
                     gb: (maxDiff - (win - lose)) / 2
                 })
             }

@@ -10,7 +10,7 @@
         :headers="headers"
         :items="tableSeparation == 'all' ? regularSeasonTeamStats : regularSeasonTeamStats.filter(item => item.conference == segment || item.division == segment)"
         density="compact"
-        :sort-by="tableSeparation == 'all' ? [{ key: 'pct', order: 'desc' }] : [{ key: 'conferenceRank', order: 'asc' }]"
+        :sort-by="tableSeparation == 'all' ? [{ key: 'pct', order: 'desc' }, { key: 'conferenceRank', order: 'asc' }] : [{ key: 'conferenceRank', order: 'asc' }]"
         hide-default-footer :items-per-page="-1" class="bg-lighten mb-2">
         <template v-slot:top>
             <v-toolbar-title class="pl-5 bg-darken">
@@ -38,7 +38,7 @@ const seasons = ref<string[]>()
 const season = ref<string>()
 const tableSeparation = ref('conferences')
 const regularSeasonTeamStats = computed<RegularSeasonTeamStats[]>(
-    () => seasonSummaries.value?.filter(item => item.season == season.value)[0].regularSeasonTeamsStats ?? []
+    () => seasonSummaries.value?.filter(item => item.season == season.value)[0].teams ?? []
 )
 const headers: DataTableHeader[] = [
     { title: 'Rank', align: 'center', sortable: true, key: 'conferenceRank' },

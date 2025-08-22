@@ -11,6 +11,7 @@ class GameSummary(models.Model):
     game_id = models.CharField(primary_key=True)
     sequence = models.IntegerField()
     status_id = models.IntegerField()
+    """1: scheduled, 2: game started, 3: game finished"""
     status_text = models.CharField()
     game_datetime = models.DateTimeField()
     """サマータイム考慮のニューヨーク時間"""
@@ -34,6 +35,11 @@ class GameSummary(models.Model):
             '5': 'Play-In Tournament',
             '6': 'Emirates NBA Cup'
         }.get(self.game_id[2], 'Unknown')
+    @property
+    def season(self):
+        year = int(self.game_id[3:5])
+        year = 2000 + year if year < 80 else 1900 + year
+        return f'{year}-{(year + 1) % 100:02d}'
 
 
 class PlayerOnGame(models.Model):

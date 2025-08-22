@@ -40,14 +40,16 @@ class SeasonSummaryCreate(TypedDict):
 ## Serializer
 #### 
 class RegularSeasonTeamStatsSerializer(serializers.ModelSerializer):
-    reb = serializers.SerializerMethodField()
-    eff = serializers.SerializerMethodField()
-    team_abbreviation = serializers.SerializerMethodField()
-    team_logo = serializers.SerializerMethodField()
+    reb = serializers.SerializerMethodField(read_only=True)
+    eff = serializers.SerializerMethodField(read_only=True)
+    team_abbreviation = serializers.SerializerMethodField(read_only=True)
+    team_logo = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = RegularSeasonTeamStats
-        fields = '__all__'
+        fields = ['team_id', 'conference', 'conference_rank', 'division', 'division_rank', 'win', 'lose',
+                    'pts', 'ast', 'stl', 'blk', 'fg', 'fga', 'three', 'threea', 'ft', 'fta', 'oreb', 'dreb', 'to', 'pf', 'plusminus',
+                    'reb', 'eff', 'team_abbreviation', 'team_logo']
     
     def get_reb(self, obj):
         return obj.reb
@@ -63,7 +65,7 @@ class RegularSeasonTeamStatsSerializer(serializers.ModelSerializer):
 
 
 class SeasonSummarySerializer(serializers.ModelSerializer):
-    regular_season_teams_stats = RegularSeasonTeamStatsSerializer(many=True, source='regular_season_team_stats')
+    teams = RegularSeasonTeamStatsSerializer(many=True, source='regular_season_team_stats', required=False, allow_empty=True)
 
     class Meta:
         model = SeasonSummary

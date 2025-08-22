@@ -190,6 +190,15 @@ def fetch_live_game_summaries(game_ids: List[str]) -> List[GameSummaryCreate]:
     # MYTODO: #34
     return game_summary_creates
 
+def get_regular_season_team_ids_by_season(season: str) -> List[int]:
+    """DB から指定の season でレギュラーシーズンの試合を実施した実績のある team_id 一覧を返します."""
+    game_summaries = GameSummary.objects.all()
+    season_finised_game_summaries = [game_summary for game_summary in game_summaries if game_summary.season == season and game_summary.game_category == 'Regular Season']
+    team_ids = []
+    for season_finished_game_summary in season_finised_game_summaries:
+        team_ids.append(season_finished_game_summary.home_team.team_id)
+        team_ids.append(season_finished_game_summary.away_team.team_id)
+    return set(team_ids)
 
 def _add_time_info_to_game_date(status_id: int, status_text: str, game_date: datetime) -> datetime:
     """status_text を基にgame_date に時間情報を付加します.  
