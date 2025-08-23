@@ -43,7 +43,7 @@ def _initialize_season_summaries(scheduler: BackgroundScheduler):
                 try:
                     teams.append(fetch_regular_season_team_stats(season, team_id))
                     print(f'[scheduler] success fetch_regular_season_team_stats, season is {season}, team_id is {team_id}')
-                    time.sleep(2*60)
+                    time.sleep(15*60)
                 except:
                     print(f'[scheduler] error in fetch_regular_season_team_stats, season is {season}, team_id is {team_id}')
                     break
