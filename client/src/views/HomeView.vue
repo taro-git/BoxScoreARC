@@ -33,12 +33,12 @@ import { type RegularSeasonTeamStats, SeasonSummary, conferences, divisions } fr
 import type { DataTableHeader } from 'vuetify';
 
 const seasonSummariesApi = new SeasonSummariesApi()
-const seasonSummaries = ref<SeasonSummary[]>()
+const seasonSummaries = ref<SeasonSummary[]>([])
 const seasons = ref<string[]>()
 const season = ref<string>()
 const tableSeparation = ref('conferences')
 const regularSeasonTeamStats = computed<RegularSeasonTeamStats[]>(
-    () => seasonSummaries.value?.filter(item => item.season == season.value)[0].teams ?? []
+    () => seasonSummaries.value.filter(item => item.season == season.value)[0]?.teams ?? []
 )
 const headers: DataTableHeader[] = [
     { title: 'Rank', align: 'center', sortable: true, key: 'conferenceRank' },
