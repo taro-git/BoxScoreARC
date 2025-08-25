@@ -3,13 +3,15 @@ import { CLIENT_BASE_URL } from '../appEnv'
 import GamesView from '../views/GamesView.vue'
 import GameView from '../views/GameView.vue'
 import AnalysisView from '../views/AnalysisView.vue'
-import HomeView from '../views/HomeView.vue'
+import SeasonsView from '../views/SeasonsView.vue'
+import LicensesView from '../views/LicensesView.vue'
 
 export const RouteName = {
-    Home: 'home',
+    Seasons: 'seasons',
     Games: 'games',
     Game: 'games/:gameId',
     Analysis: 'analysis',
+    Licenses: 'licenses',
     Invalid: 'invalid url'
 } as const
 
@@ -17,9 +19,9 @@ export type RouteName = (typeof RouteName)[keyof typeof RouteName]
 
 const routes: Array<RouteRecordRaw> = [
     {
-        path: `/${RouteName.Home}`,
-        name: RouteName.Home,
-        component: HomeView
+        path: `/${RouteName.Seasons}`,
+        name: RouteName.Seasons,
+        component: SeasonsView
     },
     {
         path: `/${RouteName.Games}`,
@@ -36,6 +38,11 @@ const routes: Array<RouteRecordRaw> = [
         path: `/${RouteName.Analysis}`,
         name: RouteName.Analysis,
         component: AnalysisView
+    },
+    {
+        path: `/${RouteName.Licenses}`,
+        name: RouteName.Licenses,
+        component: LicensesView
     },
 ]
 

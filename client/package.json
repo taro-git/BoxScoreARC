@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "generate:licenses": "npx license-checker-rseidelsohn --json --customPath ./license-format.json --out ./dist/assets/licenses.json",
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc -b && vite build && npm run generate:licenses",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
     "@types/node": "^24.0.15",
     "@vitejs/plugin-vue": "^6.0.0",
     "@vue/tsconfig": "^0.7.0",
+    "license-checker-rseidelsohn": "^4.4.2",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
     "vite-plugin-html": "^3.2.2",

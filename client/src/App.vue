@@ -64,22 +64,24 @@ const open = ref(false)
 const gameSummary = gameStore().gameSummary
 function toAppBarTitle(routeName: RouteName) {
     switch (routeName) {
-        case RouteName.Home:
-            return 'Home'
+        case RouteName.Seasons:
+            return 'Seasons'
         case RouteName.Games:
             return 'Games'
         case RouteName.Game:
             return ''
         case RouteName.Analysis:
             return 'Analysis'
+        case RouteName.Licenses:
+            return 'Licenses'
         default:
             'Invalid URL'
     }
 }
 const items = [
     {
-        title: toAppBarTitle(RouteName.Home),
-        routeName: RouteName.Home,
+        title: toAppBarTitle(RouteName.Seasons),
+        routeName: RouteName.Seasons,
         prependIcon: 'mdi-view-dashboard',
     },
     {
@@ -92,6 +94,11 @@ const items = [
         routeName: RouteName.Analysis,
         prependIcon: 'mdi-chart-bar',
     },
+    {
+        title: toAppBarTitle(RouteName.Licenses),
+        routeName: RouteName.Licenses,
+        prependIcon: 'mdi-license',
+    },
 ]
 const router = useRouter()
 const navigationClick = (routeName: string) => {
@@ -102,8 +109,8 @@ const route = useRoute()
 const selectedItemRouteName = computed<RouteName>(() => {
     const path_list = route.fullPath.split('/').slice(1)
     switch (path_list[0]) {
-        case RouteName.Home:
-            return RouteName.Home
+        case RouteName.Seasons:
+            return RouteName.Seasons
         case RouteName.Analysis:
             return RouteName.Analysis
         case RouteName.Games:
@@ -112,6 +119,8 @@ const selectedItemRouteName = computed<RouteName>(() => {
             } else {
                 return RouteName.Games
             }
+        case RouteName.Licenses:
+            return RouteName.Licenses
         default:
             return RouteName.Invalid
     }
