@@ -47,7 +47,10 @@ const tabComponents: Record<TabKey, Component> = {
     headToHeadRecord: HeadToHeadRecord
 }
 const tabProps = computed<Record<TabKey, Object>>(() => ({
-    teamStats: {},
+    teamStats: {
+        gameSummary: game.gameSummary,
+        teamStats: game.teamStats,
+    },
     boxScore: {
         gameId: props.gameId,
         gameClockRange: gameClockRange

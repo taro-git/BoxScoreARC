@@ -30,7 +30,7 @@ import { ScheduledBoxScoreStatusApi } from '../apis/scheduledBoxScoreStatus.api'
 import BoxScoreTable from './BoxScoreTable.vue';
 import { updateBoxScoreData } from '../core/boxScoreData';
 import { gameStore } from '../store/game';
-import { BOX_SCORE_COLUMN_KEYS, BoxScore, type BoxScoreTableData } from '../types/BoxScore'
+import { BoxScoreColumnKeys, BoxScore, type BoxScoreTableData } from '../types/BoxScore'
 
 const props = defineProps<{
     gameId: string
@@ -52,7 +52,9 @@ const gameSummary = game.gameSummary
 gameSummary.awayScore = 0
 gameSummary.homeScore = 0
 watch(props.gameClockRange, ([startRange, endRange]) => {
-    boxScoreTableData.value = updateBoxScoreData(boxScoreTableData.value, boxScore.value, startRange, endRange)
+    const updatedBoxScore = updateBoxScoreData(boxScoreTableData.value, boxScore.value, startRange, endRange)
+    boxScoreTableData.value = updatedBoxScore.boxScoreTableData
+    game.teamStats = BoxScoreColumnKeys.slice(2).map((key, i) => { return { boxScoreColumnKey: key, home: updatedBoxScore.homeStats[i], away: updatedBoxScore.awayStats[i] } })
     gameSummary.awayScore = gameSummary.awayPlayers.filter(player => !player.isInactive).map(player => player.playerId)
         .reduce((totalPts, playerId) => totalPts + boxScoreTableData.value[playerId][1], 0)
     gameSummary.homeScore = gameSummary.homePlayers.filter(player => !player.isInactive).map(player => player.playerId)
@@ -83,7 +85,7 @@ const pollScheduledBoxScoreStatus = async () => {
                 gameSummary.homePlayers = gameSummaryResponse[0].homePlayers
                 const players = [...gameSummaryResponse[0].homePlayers, ...gameSummaryResponse[0].awayPlayers]
                 players.forEach(player => {
-                    if (!player.isInactive) boxScoreTableData.value[player.playerId] = new Array(BOX_SCORE_COLUMN_KEYS.length - 1).fill(0)
+                    if (!player.isInactive) boxScoreTableData.value[player.playerId] = new Array(BoxScoreColumnKeys.length - 1).fill(0)
                 })
 
                 const boxScoreResponse = await boxScoreApi.getBoxScore(props.gameId)

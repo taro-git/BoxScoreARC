@@ -6,7 +6,7 @@
                     <th class="left top-row-1 z-high bg-darken" :colspan="2">
                         PLAYER
                     </th>
-                    <th v-for="(col, colIndex) in BOX_SCORE_COLUMN_KEYS" :key="'head1-' + colIndex"
+                    <th v-for="(col, colIndex) in BoxScoreColumnKeys" :key="'head1-' + colIndex"
                         class="top-row-1 bg-darken">
                         {{ BOX_SCORE_COLUMNS[col] }}
                     </th>
@@ -16,7 +16,7 @@
                     <th class="left top-row-2 z-high" :colspan="2">
                         STARTERS
                     </th>
-                    <th class="top-row-2" :colspan="BOX_SCORE_COLUMN_KEYS.length">
+                    <th class="top-row-2" :colspan="BoxScoreColumnKeys.length">
                     </th>
                 </tr>
             </thead>
@@ -27,7 +27,7 @@
                         <th class="left top-row-3 z-high" :colspan="2">
                             BENCH
                         </th>
-                        <th class="top-row-3" :colspan="BOX_SCORE_COLUMN_KEYS.length">
+                        <th class="top-row-3" :colspan="BoxScoreColumnKeys.length">
                         </th>
                     </template>
                     <template v-else-if="!row.isInactive">
@@ -60,7 +60,7 @@
                         <th :class="['left2-data', 'inactive']">
                             {{ `${row.playerName} is inactive` }}
                         </th>
-                        <th :class="'inactive'" :colspan="BOX_SCORE_COLUMN_KEYS.length">
+                        <th :class="'inactive'" :colspan="BoxScoreColumnKeys.length">
                         </th>
                     </template>
                 </tr>
@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BOX_SCORE_COLUMN_KEYS, BOX_SCORE_COLUMNS, type BoxScoreTableData, type BoxScoreRow } from '../types/BoxScore'
+import { BoxScoreColumnKeys, BOX_SCORE_COLUMNS, type BoxScoreTableData, type BoxScoreRow } from '../types/BoxScore'
 import { GameSummary, type Player } from '../types/GameSummary';
 
 const props = defineProps<{

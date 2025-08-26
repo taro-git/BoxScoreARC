@@ -1,3 +1,45 @@
+<template>
+    <v-container>
+        <v-data-table :headers="headers" :items="licenses" item-key="name" class="elevation-1 bg-darken"
+            :items-per-page="10">
+            <!-- Repository -->
+            <template #item.repository="{ item }">
+                <a v-if="item.repository" :href="item.repository" target="_blank">
+                    {{ item.repository }}
+                </a>
+            </template>
+
+            <!-- License Text -->
+            <template #item.licenseText="{ item }">
+                <v-expansion-panels>
+                    <v-expansion-panel class="bg-lighten">
+                        <v-expansion-panel-title>View</v-expansion-panel-title>
+                        <v-expansion-panel-text>
+                            <pre class="text-body-2 whitespace-pre-wrap">
+                                {{ item.licenseText || "N/A" }}
+                            </pre>
+                        </v-expansion-panel-text>
+                    </v-expansion-panel>
+                </v-expansion-panels>
+            </template>
+
+            <!-- Notice -->
+            <template #item.noticeFile="{ item }">
+                <v-expansion-panels>
+                    <v-expansion-panel class="bg-lighten">
+                        <v-expansion-panel-title>View</v-expansion-panel-title>
+                        <v-expansion-panel-text>
+                            <pre class="text-body-2 whitespace-pre-wrap">
+                                {{ item.noticeFile || "N/A" }}
+                            </pre>
+                        </v-expansion-panel-text>
+                    </v-expansion-panel>
+                </v-expansion-panels>
+            </template>
+        </v-data-table>
+    </v-container>
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 
@@ -40,45 +82,3 @@ onMounted(async () => {
     });
 });
 </script>
-
-<template>
-    <v-container>
-        <v-data-table :headers="headers" :items="licenses" item-key="name" class="elevation-1 bg-darken"
-            :items-per-page="10">
-            <!-- Repository -->
-            <template #item.repository="{ item }">
-                <a v-if="item.repository" :href="item.repository" target="_blank">
-                    {{ item.repository }}
-                </a>
-            </template>
-
-            <!-- License Text -->
-            <template #item.licenseText="{ item }">
-                <v-expansion-panels>
-                    <v-expansion-panel class="bg-lighten">
-                        <v-expansion-panel-title>View</v-expansion-panel-title>
-                        <v-expansion-panel-text>
-                            <pre class="text-body-2 whitespace-pre-wrap">
-{{ item.licenseText || "N/A" }}
-              </pre>
-                        </v-expansion-panel-text>
-                    </v-expansion-panel>
-                </v-expansion-panels>
-            </template>
-
-            <!-- Notice -->
-            <template #item.noticeFile="{ item }">
-                <v-expansion-panels>
-                    <v-expansion-panel class="bg-lighten">
-                        <v-expansion-panel-title>View</v-expansion-panel-title>
-                        <v-expansion-panel-text>
-                            <pre class="text-body-2 whitespace-pre-wrap">
-{{ item.noticeFile || "N/A" }}
-              </pre>
-                        </v-expansion-panel-text>
-                    </v-expansion-panel>
-                </v-expansion-panels>
-            </template>
-        </v-data-table>
-    </v-container>
-</template>

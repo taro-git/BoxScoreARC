@@ -1,7 +1,7 @@
-export const BOX_SCORE_COLUMN_KEYS = [
+export const BoxScoreColumnKeys = [
     'pos', 'min', 'pts', 'reb', 'ast', 'stl', 'blk', 'fg', 'fga', 'fgper', 'three', 'threea', 'threeper', 'ft', 'fta', 'ftper', 'oreb', 'dreb', 'to', 'pf', 'eff', 'plusminus'
 ] as const
-export type BoxScoreColumnKeys = typeof BOX_SCORE_COLUMN_KEYS[number]
+export type BoxScoreColumnKeys = typeof BoxScoreColumnKeys[number]
 export const BOX_SCORE_COLUMNS: Record<BoxScoreColumnKeys, string> = {
     pos: 'POS',
     min: 'MIN',
@@ -74,7 +74,7 @@ type boxScoreData = [
     number,
 ]
 
-interface PlayerOnBoxScore {
+export interface PlayerOnBoxScore {
     playerId: number
     boxScoreData: boxScoreData[]
 }
