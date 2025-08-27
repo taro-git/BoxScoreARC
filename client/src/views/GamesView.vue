@@ -22,7 +22,8 @@
                     <v-skeleton-loader elevation="7" :loading="gameSummariesSets.isLoadingMap.value[dayOffset]"
                         type="image" class="w-100" color="lighten">
                         <v-responsive class="elevation-7 rounded">
-                            <GameCard :key="j" :game-summary="game" :score-display="scoreDisplay" :full-view="true" />
+                            <GameCard :key="j" :game-summary="game" :score-display="scoreDisplay" :full-view="true"
+                                :game-date-display="false" />
                         </v-responsive>
                     </v-skeleton-loader>
                 </v-container>

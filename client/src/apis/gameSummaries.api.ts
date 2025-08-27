@@ -23,5 +23,11 @@ export class GameSummariesApi extends BackendApi {
         const response: IGameSummary[] = await this.get({ game_id: gameId })
         return response.map(iGameSummary => new GameSummary(iGameSummary))
     }
+
+    public async getGameSummaryByMatchUp(teamIds: [number, number]): Promise<GameSummary[]> {
+        const response1: IGameSummary[] = await this.get({ home_team_id: teamIds[0], away_team_id: teamIds[1] })
+        const response2: IGameSummary[] = await this.get({ home_team_id: teamIds[1], away_team_id: teamIds[0] })
+        return [...response1, ...response2].map(iGameSummary => new GameSummary(iGameSummary))
+    }
 }
 

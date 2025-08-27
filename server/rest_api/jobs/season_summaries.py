@@ -66,14 +66,14 @@ def daily_season_summary_job(scheduler: BackgroundScheduler):
     nba_api をたたいて、前日の試合結果を season summary に反映させます."""
     print('[scheduler] add daily job: season summary')
     scheduler.add_job(
-        func=_daily_season_summary_jobs,
+        func=_daily_season_summary_job,
         trigger=CronTrigger(hour=0, minute=0),
         id='daily_season_summary_job',
         replace_existing=True,
     )
 
 
-def _daily_season_summary_jobs():
+def _daily_season_summary_job():
     """nba_api をたたいて、前日の試合結果を踏まえた season summary を upsert します.  """
     print(f'[scheduler] start daily job at {datetime.now()}: season summary')
     today = datetime.now()

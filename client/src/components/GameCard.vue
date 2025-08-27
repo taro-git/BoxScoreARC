@@ -32,6 +32,7 @@ const props = defineProps<{
     gameSummary: GameSummary
     scoreDisplay: boolean
     fullView: boolean
+    gameDateDisplay: boolean
 }>()
 
 const selectedGame = gameStore()
@@ -41,9 +42,18 @@ if (!props.scoreDisplay && props.gameSummary.statusId == 3) {
     statusText.value = 'Final'
 }
 if (props.gameSummary.statusId == 1) {
+    const year = props.gameSummary.gameDatetime.getFullYear()
+    const month = props.gameSummary.gameDatetime.getMonth() + 1
+    const date = props.gameSummary.gameDatetime.getDate()
     const hour = props.gameSummary.gameDatetime.getHours().toString().padStart(2, '0')
     const minute = props.gameSummary.gameDatetime.getMinutes().toString().padStart(2, '0')
-    statusText.value = `${hour}:${minute}`
+    if (props.gameDateDisplay) {
+        statusText.value = `${year}/${month}/${date} ${hour}:${minute}`
+    } else {
+        statusText.value = `${hour}:${minute}`
+    }
+} else if (props.gameDateDisplay) {
+    statusText.value = `${props.gameSummary.statusText} at ${props.gameSummary.gameDatetime.getFullYear()}/${props.gameSummary.gameDatetime.getMonth() + 1}/${props.gameSummary.gameDatetime.getDate()}`
 }
 
 const selectGame = () => {
@@ -57,12 +67,8 @@ const selectGame = () => {
     background: white;
     color: black;
     text-decoration: none;
-    /* margin: 7px 14px; */
     border-radius: 12px;
     padding: 15px;
-    /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); */
-    /* 任意：少し立体感を出す */
-    /* width: 100%; */
 }
 
 .status {
