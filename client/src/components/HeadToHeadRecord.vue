@@ -7,7 +7,7 @@
                 </v-responsive>
             </v-skeleton-loader>
         </v-container>
-        <v-card v-if="gameSummaries.length === 0 && !isError" elevation="0" class="bg-base">
+        <v-card v-if="gameSummaries.length === 0 && !isError && !isLoading" elevation="0" class="bg-base">
             <v-card-title class="text-center text-h3 justify-center">no game</v-card-title>
         </v-card>
         <v-empty-state v-if="isError" title="Whoops, Server Error" :text="errorMessage" class="text-accent" />
