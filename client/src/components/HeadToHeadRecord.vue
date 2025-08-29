@@ -1,9 +1,10 @@
 <template>
     <v-sheet class="bg-base">
-        <v-container v-for="game in gameSummaries">
+        <v-container v-for="gameSummary in gameSummaries">
             <v-skeleton-loader elevation="7" :loading="isLoading" type="image" class="w-100" color="lighten">
                 <v-responsive class="elevation-7 rounded">
-                    <GameCard :game-summary="game" :score-display="true" :full-view="true" :game-date-display="true" />
+                    <GameCard :game-summary="gameSummary" :score-display="true" :full-view="true"
+                        :game-date-display="true" :disableLink="game.gameSummary.gameId == gameSummary.gameId" />
                 </v-responsive>
             </v-skeleton-loader>
         </v-container>

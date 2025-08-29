@@ -51,6 +51,7 @@ const game = gameStore()
 const gameSummary = game.gameSummary
 gameSummary.awayScore = 0
 gameSummary.homeScore = 0
+gameSummary.gameId = props.gameId
 watch(props.gameClockRange, ([startRange, endRange]) => {
     const updatedBoxScore = updateBoxScoreData(boxScoreTableData.value, boxScore.value, startRange, endRange)
     boxScoreTableData.value = updatedBoxScore.boxScoreTableData

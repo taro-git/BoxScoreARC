@@ -23,7 +23,7 @@
                         type="image" class="w-100" color="lighten">
                         <v-responsive class="elevation-7 rounded">
                             <GameCard :key="j" :game-summary="game" :score-display="scoreDisplay" :full-view="true"
-                                :game-date-display="false" />
+                                :game-date-display="false" :disableLink="false" />
                         </v-responsive>
                     </v-skeleton-loader>
                 </v-container>

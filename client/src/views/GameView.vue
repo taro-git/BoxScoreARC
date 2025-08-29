@@ -18,7 +18,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, defineProps, watch, type Component, type ComputedRef } from 'vue'
+import { ref, computed, watch, type Component, type ComputedRef } from 'vue'
+import { useRoute } from 'vue-router'
 
 import TeamStats from '../components/TeamStats.vue'
 import BoxScore from '../components/BoxScore.vue'
@@ -27,9 +28,8 @@ import { gameStore } from '../store/game'
 import { settingsStore } from '../store/settings'
 import { type quarterRangeVariations, quarterRangeLabels } from '../types/QuarterRangeVariations'
 
-const props = defineProps<{
-    gameId: string
-}>()
+const route = useRoute()
+const gameId = route.params.gameId
 
 const game = gameStore()
 
@@ -47,12 +47,9 @@ const tabComponents: Record<TabKey, Component> = {
     headToHeadRecord: HeadToHeadRecord
 }
 const tabProps = computed<Record<TabKey, Object>>(() => ({
-    teamStats: {
-        gameSummary: game.gameSummary,
-        teamStats: game.teamStats,
-    },
+    teamStats: {},
     boxScore: {
-        gameId: props.gameId,
+        gameId: gameId,
         gameClockRange: gameClockRange
     },
     headToHeadRecord: {}

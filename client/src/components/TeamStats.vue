@@ -1,5 +1,5 @@
 <template>
-    <v-data-table :headers="headers" :items="teamStats" density="compact" hide-default-footer :items-per-page="-1"
+    <v-data-table :headers="headers" :items="game.teamStats" density="compact" hide-default-footer :items-per-page="-1"
         class="bg-lighten">
         <template v-slot:item="{ item }">
             <tr class="text-no-wrap text-center">
@@ -14,19 +14,16 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { DataTableHeader } from 'vuetify';
-import { BOX_SCORE_COLUMNS } from '../types/BoxScore';
-import { type TeamStats } from '../types/TeamStats';
-import type { GameSummary } from '../types/GameSummary';
 
-const props = defineProps<{
-    gameSummary: GameSummary
-    teamStats: TeamStats[]
-}>()
+import { gameStore } from '../store/game'
+import { BOX_SCORE_COLUMNS } from '../types/BoxScore';
+
+const game = gameStore()
 
 const headers = computed<DataTableHeader[]>(() => [
-    { title: props.gameSummary.awayTeam.abbreviation, align: 'center', sortable: false, key: 'away' },
+    { title: game.gameSummary.awayTeam.abbreviation, align: 'center', sortable: false, key: 'away' },
     { title: '', align: 'center', sortable: false, key: 'boxScoreColumnKey' },
-    { title: props.gameSummary.homeTeam.abbreviation, align: 'center', sortable: false, key: 'home' },
+    { title: game.gameSummary.homeTeam.abbreviation, align: 'center', sortable: false, key: 'home' },
 ])
 
 </script>

@@ -1,5 +1,5 @@
 <template>
-    <div :style="{ 'background-color': 'white' }">
+    <div :style="{ 'background-color': disableLink ? 'darken' : 'white' }">
         <router-link :to="{ name: RouteName.Game, params: { gameId: gameSummary.gameId } }" class="card"
             @click="selectGame">
             <div class="status">{{ statusText }}</div>
@@ -33,6 +33,7 @@ const props = defineProps<{
     scoreDisplay: boolean
     fullView: boolean
     gameDateDisplay: boolean
+    disableLink: boolean
 }>()
 
 const selectedGame = gameStore()
@@ -64,7 +65,6 @@ const selectGame = () => {
 
 <style scoped>
 .card {
-    background: white;
     color: black;
     text-decoration: none;
     border-radius: 12px;
