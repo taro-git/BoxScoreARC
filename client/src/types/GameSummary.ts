@@ -36,6 +36,9 @@ export class GameSummary {
     homeTeam: Team
     awayTeam: Team
     sequence: number
+    /**
+     * 1: scheduled, 2: game started, 3: game finished
+     */
     statusId: number
     statusText: string
     gameDatetime: Date

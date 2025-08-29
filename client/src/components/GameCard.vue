@@ -1,7 +1,6 @@
 <template>
     <div :style="{ 'background-color': disableLink ? 'darken' : 'white' }">
-        <router-link :to="{ name: RouteName.Game, params: { gameId: gameSummary.gameId } }" class="card"
-            @click="selectGame">
+        <router-link :to="{ name: RouteName.Game, params: { gameId: gameSummary.gameId } }" class="card">
             <div class="status">{{ statusText }}</div>
             <div v-if="fullView" class="category">{{ gameSummary.gameCategory }}</div>
             <div class="teams">
@@ -25,7 +24,6 @@
 import { ref } from 'vue'
 
 import { RouteName } from '../router/index'
-import { gameStore } from '../store/game';
 import { GameSummary } from '../types/GameSummary';
 
 const props = defineProps<{
@@ -35,8 +33,6 @@ const props = defineProps<{
     gameDateDisplay: boolean
     disableLink: boolean
 }>()
-
-const selectedGame = gameStore()
 
 const statusText = ref(props.gameSummary.statusText)
 if (!props.scoreDisplay && props.gameSummary.statusId == 3) {
@@ -55,10 +51,6 @@ if (props.gameSummary.statusId == 1) {
     }
 } else if (props.gameDateDisplay) {
     statusText.value = `${props.gameSummary.statusText} at ${props.gameSummary.gameDatetime.getFullYear()}/${props.gameSummary.gameDatetime.getMonth() + 1}/${props.gameSummary.gameDatetime.getDate()}`
-}
-
-const selectGame = () => {
-    Object.assign(selectedGame.gameSummary, props.gameSummary)
 }
 
 </script>

@@ -21,6 +21,7 @@
 import { ref, computed, watch, type Component, type ComputedRef } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { GameSummariesApi } from '../apis/gameSummaries.api'
 import TeamStats from '../components/TeamStats.vue'
 import BoxScore from '../components/BoxScore.vue'
 import HeadToHeadRecord from '../components/HeadToHeadRecord.vue'
@@ -30,8 +31,15 @@ import { type quarterRangeVariations, quarterRangeLabels } from '../types/Quarte
 
 const route = useRoute()
 const gameId = route.params.gameId
-
+if (typeof gameId !== 'string') {
+    throw new Error()
+}
 const game = gameStore()
+if (game.gameSummary.gameId !== gameId) {
+    new GameSummariesApi().getGameSummaryByGameId(gameId).then(response => {
+        Object.assign(game.gameSummary, response[0])
+    })
+}
 
 const tabs = ['teamStats', 'boxScore', 'headToHeadRecord'] as const
 type TabKey = typeof tabs[number]

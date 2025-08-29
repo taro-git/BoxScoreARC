@@ -5,7 +5,8 @@
                 <v-btn :value="team" class="bg-darken w-100">{{ gameSummary[team].abbreviation }}</v-btn>
             </v-col>
         </v-btn-toggle>
-        <v-skeleton-loader elevation="7" :loading="isLoading" color="lighten" type="table-row@12">
+        <v-skeleton-loader v-if="game.gameSummary.statusId === 3" elevation="7" :loading="isLoading" color="lighten"
+            type="table-row@12">
             <v-responsive class="elevation-7 rounded fill-height">
                 <box-score-table v-if="!isOccuredError && !isProgressing" :game-summary="gameSummary"
                     :data="boxScoreTableData" :selected-team="selectedTeam" :game-clock-range="gameClockRange"
@@ -18,6 +19,7 @@
                 </v-progress-circular>
             </v-responsive>
         </v-skeleton-loader>
+        <v-empty-state v-else title="Comming soon..." :text="gameDatetimeText" />
     </v-sheet>
 </template>
 
@@ -51,7 +53,10 @@ const game = gameStore()
 const gameSummary = game.gameSummary
 gameSummary.awayScore = 0
 gameSummary.homeScore = 0
-gameSummary.gameId = props.gameId
+const gameDatetimeText = computed(() =>
+    `scheduled at ${gameSummary.gameDatetime.getFullYear()}/${gameSummary.gameDatetime.getMonth() + 1}/${gameSummary.gameDatetime.getDate()} 
+    ${gameSummary.gameDatetime.getHours().toString().padStart(2, '0')}:${gameSummary.gameDatetime.getMinutes().toString().padStart(2, '0')}`
+)
 watch(props.gameClockRange, ([startRange, endRange]) => {
     const updatedBoxScore = updateBoxScoreData(boxScoreTableData.value, boxScore.value, startRange, endRange)
     boxScoreTableData.value = updatedBoxScore.boxScoreTableData
@@ -112,7 +117,11 @@ onUnmounted(() => {
     }
 })
 
-pollScheduledBoxScoreStatus()
+if (game.gameSummary.statusId === 3) {
+    pollScheduledBoxScoreStatus()
+} else {
+    isLoading.value = false
+}
 </script>
 
 <style scoped></style>
