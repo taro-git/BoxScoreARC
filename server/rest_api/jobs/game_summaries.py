@@ -37,7 +37,7 @@ def _initialize_game_summaries(scheduler: BackgroundScheduler):
                     try:
                         upsert_game_summary(game_summary)
                     except Exception as e:
-                        print(f'[scheduler] error in upsert_game_summary, game id is {game_summary["game_id"]}')
+                        print(f'[scheduler] error in upsert_game_summary, {game_summary.get("home_team_abb", 'unknown')} vs. {game_summary.get("away_team_abb", 'unknown')} at {game_summary.get("game_datetime", 'unknown')}')
                 if len(game_summaries) > 0:
                     print(f'success upsert season {season}')
                     print(datetime.now())
@@ -83,7 +83,7 @@ def _upsert_future_game_summary():
                 try:
                     upsert_game_summary(game_summary)
                 except Exception as e:
-                    print(f'[scheduler] error in upsert_game_summary, {game_summary["home_team_abb"]} vs. {game_summary["away_team_abb"]} at {game_summary["game_datetime"]}')
+                    print(f'[scheduler] error in upsert_game_summary, {game_summary.get("home_team_abb", 'unknown')} vs. {game_summary.get("away_team_abb", 'unknown')} at {game_summary.get("game_datetime", 'unknown')}')
             print(f'[scheduler] upsert game summaries {season}')
         except Exception as e:
             print(f'[scheduler] error in fetch in {season}. {e}')
