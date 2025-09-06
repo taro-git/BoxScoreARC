@@ -20,10 +20,10 @@ class GameSummary(models.Model):
     away_team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name='away_games')
     away_score = models.IntegerField()
     @property
-    def home_players_on_game(self):
+    def home_players_on_game(self) -> list['PlayerOnGame']:
         return self.players.filter(is_home=True)
     @property
-    def away_players_on_game(self):
+    def away_players_on_game(self) -> list['PlayerOnGame']:
         return self.players.filter(is_home=False)
     @property
     def game_category(self):

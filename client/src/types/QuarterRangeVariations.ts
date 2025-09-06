@@ -1,4 +1,4 @@
-export type quarterRangeVariations = 'Q1' | 'Q2' | 'firstHalf' | 'Q3' | 'Q4' | 'secondHalf' | 'fourQuarters' | 'all' | 'OT'
+export type quarterRangeVariations = 'Q1' | 'Q2' | 'firstHalf' | 'Q3' | 'Q4' | 'secondHalf' | 'regulation' | 'all' | 'OT'
 
 export const quarterRangeLabels: { value: quarterRangeVariations, title: string }[] = [
     { value: 'Q1', title: '1st Q.' },
@@ -7,7 +7,7 @@ export const quarterRangeLabels: { value: quarterRangeVariations, title: string 
     { value: 'Q3', title: '3rd Q.' },
     { value: 'Q4', title: '4th Q.' },
     { value: 'secondHalf', title: 'Second Half' },
-    { value: 'fourQuarters', title: '4 Quarters' },
+    { value: 'regulation', title: 'Regulation' },
     { value: 'all', title: 'All' },
     { value: 'OT', title: 'Over Time' },
 ]

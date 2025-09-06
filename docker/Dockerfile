@@ -2,7 +2,7 @@
 # for base
 # -------------------------
 
-FROM python:3.11-slim as server-base
+FROM python:3-slim as server-base
 
 RUN apt update && \
     apt install -y tzdata && \

@@ -13,7 +13,7 @@ interface SettingsState {
 export const settingsStore = defineStore('settings', {
     state: (): SettingsState => ({
         scoreDisplay: true,
-        defaultQuarterRangeType: 'fourQuarters',
+        defaultQuarterRangeType: 'all',
         themeColor: DEFAULT_THEME_COLOR_BASE
     }),
     persist: true,

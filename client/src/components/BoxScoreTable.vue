@@ -78,7 +78,6 @@ const props = defineProps<{
     gameSummary: GameSummary
     data: BoxScoreTableData
     selectedTeam: string
-    gameClockRange: number[]
     isCollect: boolean
 }>()
 

@@ -98,8 +98,10 @@ const updategameSummariesSets = async () => {
                 if (a.statusId !== b.statusId) {
                     return statusIdPriority.indexOf(a.statusId) - statusIdPriority.indexOf(b.statusId)
                 }
-                if (a.gameDatetime !== b.gameDatetime) {
-                    return a.gameDatetime.getTime() - b.gameDatetime.getTime()
+                const gameDateTimeA = a.gameDatetime.getTime()
+                const gameDateTimeB = b.gameDatetime.getTime()
+                if (gameDateTimeA !== gameDateTimeB) {
+                    return gameDateTimeA - gameDateTimeB
                 }
                 return a.sequence - b.sequence
             })

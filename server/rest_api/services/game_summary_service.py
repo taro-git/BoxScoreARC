@@ -184,12 +184,6 @@ def update_players_in_game_summary_by_game_id(game_id:str) -> GameSummaryCreate:
         'sequence': game_summary_from_db.sequence,
     })
 
-def fetch_live_game_summaries(game_ids: List[str]) -> List[GameSummaryCreate]:
-    """試合中のゲームについて、game_id を指定して GameSummaryCreate クラスを生成します."""
-    game_summary_creates: List[GameSummaryCreate] = []
-    # MYTODO: #34
-    return game_summary_creates
-
 def get_regular_season_team_ids_by_season(season: str) -> List[int]:
     """DB から指定の season でレギュラーシーズンの試合を実施した実績のある team_id 一覧を返します."""
     game_summaries = GameSummary.objects.all()

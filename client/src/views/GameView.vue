@@ -5,7 +5,8 @@
         </v-tabs>
         <v-tabs-window v-model="selectedTab" class="fill-height">
             <v-tabs-window-item v-for="tab in tabs" :key="tab" :value="tab" class="fill-height">
-                <v-sheet v-if="tab === 'boxScore' || tab === 'teamStats'" class="bg-base px-6 text-center">
+                <v-sheet v-if="(tab === 'boxScore' || tab === 'teamStats') && game.gameSummary.statusId == 3"
+                    class="bg-base px-6 text-center">
                     <v-select v-model="selectedQuarterRange" label="range of quarter" :items="quarterRangeLabels" />
                     {{ formatReminTime(gameClockRange[0]) }} ~ {{ formatReminTime(gameClockRange[1]) }}
                     <v-range-slider v-model="gameClockRange" :min="minSeconds" :max="maxSeconds" color="accent"
@@ -62,8 +63,8 @@ const tabProps = computed<Record<TabKey, Object>>(() => ({
     },
     headToHeadRecord: {}
 }))
-
-const selectedQuarterRange = ref<quarterRangeVariations>(settingsStore().defaultQuarterRangeType)
+const settings = settingsStore()
+const selectedQuarterRange = ref<quarterRangeVariations>(settings.defaultQuarterRangeType)
 const quaterRange: ComputedRef<Record<quarterRangeVariations, Record<'maxQuater' | 'minQuater', number>>> = computed(() => {
     return {
         Q1: { maxQuater: 1, minQuater: 1 },
@@ -72,7 +73,7 @@ const quaterRange: ComputedRef<Record<quarterRangeVariations, Record<'maxQuater'
         Q3: { maxQuater: 3, minQuater: 3 },
         Q4: { maxQuater: 4, minQuater: 4 },
         secondHalf: { maxQuater: 4, minQuater: 3 },
-        fourQuarters: { maxQuater: 4, minQuater: 1 },
+        regulation: { maxQuater: 4, minQuater: 1 },
         all: { maxQuater: game.finalPeriod, minQuater: 1 },
         OT: { maxQuater: game.finalPeriod <= 4 ? 5 : game.finalPeriod, minQuater: 5 }
     }
@@ -85,7 +86,7 @@ const minSeconds = computed(() => {
     const minQuarter = quaterRange.value[selectedQuarterRange.value].minQuater
     return minQuarter <= 4 ? 12 * (minQuarter - 1) * 60 : 12 * 4 * 60 + 5 * (minQuarter - 5) * 60
 })
-const gameClockRange = ref([minSeconds.value, minSeconds.value])
+const gameClockRange = ref([minSeconds.value, settings.scoreDisplay ? maxSeconds.value : minSeconds.value])
 watch(selectedQuarterRange, () => {
     const min = minSeconds.value
     const max = maxSeconds.value
