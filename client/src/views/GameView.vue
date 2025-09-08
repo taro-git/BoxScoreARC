@@ -90,12 +90,7 @@ const gameClockRange = ref([minSeconds.value, settings.scoreDisplay ? maxSeconds
 watch(selectedQuarterRange, () => {
     const min = minSeconds.value
     const max = maxSeconds.value
-    const [start, end] = gameClockRange.value
-
-    const clampedStart = Math.max(min, Math.min(start, max))
-    const clampedEnd = Math.max(min, Math.min(end, max))
-
-    gameClockRange.value = [clampedStart, clampedEnd]
+    gameClockRange.value = settings.scoreDisplay ? [min, max] : [min, min]
 })
 
 const formatReminTime = (seconds: number) => {
