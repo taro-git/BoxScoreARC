@@ -20,7 +20,7 @@ def update_live_games_job(scheduler: BackgroundScheduler):
     当日に予定されている試合がある場合に、game summary と box score を定期更新します."""
     print('[scheduler] add daily job: live game')
     scheduler.add_job(
-        func=_update_live_games_job,
+        func=lambda: _update_live_games_job(scheduler),
         trigger=CronTrigger(hour=0, minute=0),
         id='update_live_games_job',
         replace_existing=True,
