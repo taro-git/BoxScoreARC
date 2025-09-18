@@ -1,28 +1,29 @@
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
-from django.utils.timezone import make_aware
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from django.utils.timezone import make_aware
 
 from rest_api.models.game_summary import GameSummary
 from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
 from rest_api.services.box_score_service import upsert_box_score
 from rest_api.services.game_summary_service import upsert_game_summary
-from rest_api.services.scheduled_box_score_status_service import upsert_scheduled_box_score_status
+from rest_api.services.scheduled_box_score_status_service import (
+    upsert_scheduled_box_score_status,
+)
 from rest_api.utils.fetch_live_game import fetch_live_game
 from rest_api.utils.fetch_player_on_game import fetch_player_on_game
 
 
 def update_live_games_job(scheduler: BackgroundScheduler):
-    """日次で 00:00 に実行する処理を定義します.  
+    """日次で 00:00 に実行する処理を定義します.
     当日に予定されている試合がある場合に、game summary と box score を定期更新します."""
-    print('[scheduler] add daily job: live game')
+    print("[scheduler] add daily job: live game")
     scheduler.add_job(
         func=lambda: _update_live_games_job(scheduler),
         trigger=CronTrigger(hour=0, minute=0),
-        id='update_live_games_job',
+        id="update_live_games_job",
         replace_existing=True,
     )
 
@@ -31,10 +32,17 @@ def _update_live_games_job(scheduler: BackgroundScheduler):
     """当日に予定されている試合がある場合に、game summary および box score の定期更新用ジョブを追加します."""
     today = datetime.now()
     today = today.replace(hour=0, minute=0, second=0, microsecond=0)
-    game_summaries = GameSummary.objects.filter(game_datetime__range=(make_aware(today), make_aware(today + timedelta(days=1))), status_id=1)
+    game_summaries = GameSummary.objects.filter(
+        game_datetime__range=(make_aware(today), make_aware(today + timedelta(days=1))),
+        status_id=1,
+    )
     for game_summary in game_summaries:
-        job_id = f'update_live_box_score_{game_summary.game_id}'
-        print(f'[scheduler] add job ({job_id}) whitch is every 15 minutes from {game_summary.game_datetime.date()}: live game ({game_summary.home_team.abbreviation} vs. {game_summary.away_team.abbreviation})')
+        job_id = f"update_live_box_score_{game_summary.game_id}"
+        print(
+            f"[scheduler] add job ({job_id}) whitch is every 15 minutes "
+            f"from {game_summary.game_datetime.date()}: live game "
+            f"({game_summary.home_team.abbreviation} vs. {game_summary.away_team.abbreviation})"
+        )
         scheduler.add_job(
             func=lambda: _update_live_game_job(scheduler, job_id, game_summary.game_id),
             trigger=IntervalTrigger(minutes=15),
@@ -47,53 +55,52 @@ def _update_live_games_job(scheduler: BackgroundScheduler):
 
 def _update_live_game_job(scheduler: BackgroundScheduler, job_id: str, game_id: str):
     """box score を定期更新します."""
-    print(f'[scheduler] start update job at {datetime.now()}: {job_id}')
+    print(f"[scheduler] start update job at {datetime.now()}: {job_id}")
     game_summary = GameSummary.objects.filter(game_id=game_id).first()
     if game_summary is not None:
-        match_up = f'{game_summary.home_team.abbreviation} vs. {game_summary.away_team.abbreviation}'
-        if not game_summary.status_text.startswith('Final'):
-            print(f'[scheduler] try fetch and upsert live game, {match_up}')
+        match_up = f"{game_summary.home_team.abbreviation} vs. {game_summary.away_team.abbreviation}"
+        if not game_summary.status_text.startswith("Final"):
+            print(f"[scheduler] try fetch and upsert live game, {match_up}")
             try:
                 live_game = fetch_live_game(game_summary)
             except Exception as e:
-                print(f'[scheduler] error in fetch_live_game, {match_up}. {e}')
+                print(f"[scheduler] error in fetch_live_game, {match_up}. {e}")
             try:
-                upsert_game_summary(live_game['game_summary_create'])
+                upsert_game_summary(live_game["game_summary_create"])
             except Exception as e:
-                print(f'[scheduler] error in live upsert_game_summary, {match_up}. {e}')
+                print(f"[scheduler] error in live upsert_game_summary, {match_up}. {e}")
             try:
-                upsert_box_score(live_game['box_score_create'])
+                upsert_box_score(live_game["box_score_create"])
             except Exception as e:
-                print(f'[scheduler] error in upsert_box_score, {match_up}. {e}')
+                print(f"[scheduler] error in upsert_box_score, {match_up}. {e}")
         else:
-            print(f'[scheduler] try fetch and upsert box score of finished game, {match_up}')
+            print(f"[scheduler] try fetch and upsert box score of finished game, {match_up}")
             status = ScheduledBoxScoreStatus.objects.filter(game_id=game_id).first()
-            if status is None or status.status == 'errored':
-                print(f'[scheduler] error in fetch and upsert box score of finished game, {match_up}. so retry')
-                upsert_scheduled_box_score_status({
-                    'game_id': game_id,
-                    'progress': 0
-                })
-            elif status.status == 'completed':
+            if status is None or status.status == "errored":
+                print(f"[scheduler] error in fetch and upsert box score of finished game, {match_up}. so retry")
+                upsert_scheduled_box_score_status({"game_id": game_id, "progress": 0})
+            elif status.status == "completed":
                 try:
                     players = fetch_player_on_game(game_id)
-                    upsert_game_summary({
-                        'game_id': game_id,
-                        'home_team_id': game_summary.home_team.team_id,
-                        'home_team_abb': game_summary.home_team.abbreviation,
-                        'home_score': game_summary.home_score,
-                        'home_players': players['home_players'],
-                        'away_team_id': game_summary.away_team.team_id,
-                        'away_team_abb': game_summary.away_team.abbreviation,
-                        'away_score': game_summary.away_score,
-                        'away_players': players['home_players'],
-                        'game_datetime': game_summary.game_datetime,
-                        'status_id': 3,
-                        'status_text': game_summary.status_text,
-                        'sequence': game_summary.sequence,
-                    })
+                    upsert_game_summary(
+                        {
+                            "game_id": game_id,
+                            "home_team_id": game_summary.home_team.team_id,
+                            "home_team_abb": game_summary.home_team.abbreviation,
+                            "home_score": game_summary.home_score,
+                            "home_players": players["home_players"],
+                            "away_team_id": game_summary.away_team.team_id,
+                            "away_team_abb": game_summary.away_team.abbreviation,
+                            "away_score": game_summary.away_score,
+                            "away_players": players["home_players"],
+                            "game_datetime": game_summary.game_datetime,
+                            "status_id": 3,
+                            "status_text": game_summary.status_text,
+                            "sequence": game_summary.sequence,
+                        }
+                    )
                 except Exception as e:
-                    print(f'[scheduler] error in final upsert_game_summary, {match_up}. {e}')
-                print(f'[scheduler] remove {job_id}')
+                    print(f"[scheduler] error in final upsert_game_summary, {match_up}. {e}")
+                print(f"[scheduler] remove {job_id}")
                 scheduler.remove_job(job_id)
     return

@@ -57,17 +57,25 @@ database: PostgreSQL
 1. Run following commands to install packages for server 
     ```sh
     cd .\server\
-    py -m venv env
-    .\env\Scripts\Activate.ps1
+    py -m venv .venv
+    .\.venv\Scripts\Activate.ps1
     pip install --no-cache-dir -r .\requirements.txt
     deactivate
     cd ..
     ```
 1. enable virtual environment python packages in vscode
     1. `Ctrl+Shift+P` and click `Python: Select Interpreter`
-    1. select `Python <<version>> ('env': venv) .\server\env\Scripts\python.exe`
+    1. select `Python <<version>> ('.venv': venv) .\server\.venv\Scripts\python.exe`
     1. restart vscode
 1. Run following commands in Docker environment  
     ```sh
     docker compose --profile dev up --build -d
     ```
+
+### lint
+```shell
+npm run lint
+npm run format
+ruff format .
+ruff check . --fix
+```

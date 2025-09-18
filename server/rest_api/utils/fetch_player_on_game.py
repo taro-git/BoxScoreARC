@@ -1,6 +1,6 @@
-from typing import TypedDict, List
+from typing import List, TypedDict
 
-from nba_api.stats.endpoints import boxscoresummaryv2, boxscoreplayertrackv3
+from nba_api.stats.endpoints import boxscoreplayertrackv3, boxscoresummaryv2
 
 from rest_api.models.game_summary import GameSummary, PlayerOnGame
 from rest_api.serializers.game_summary import PlayerOnGameCreate
@@ -14,7 +14,7 @@ class PlayersDict(TypedDict):
 
 
 def fetch_player_on_game(game_id: str) -> PlayersDict:
-    """指定のgame_id の選手情報を返します.  
+    """指定のgame_id の選手情報を返します.
     DBに各チーム8人以上のプレイヤーが登録済みであれば、DB の値を返します."""
     if GameSummary.objects.filter(game_id=game_id).exists():
         game_summary_existing_db = GameSummary.objects.get(game_id=game_id)
@@ -28,15 +28,17 @@ def fetch_player_on_game(game_id: str) -> PlayersDict:
     home_players: List[PlayerOnGameCreate] = []
     away_players: List[PlayerOnGameCreate] = []
     for player_existing_db in players_existing_db:
-        player_on_game_create = PlayerOnGameCreate({
-            'player_id': player_existing_db.player_id,
-            'name': player_existing_db.name,
-            'jersey': player_existing_db.jersey,
-            'position': player_existing_db.position,
-            'is_starter': player_existing_db.is_starter,
-            'is_inactive': player_existing_db.is_inactive,
-            'sequence': player_existing_db.sequence
-        })
+        player_on_game_create = PlayerOnGameCreate(
+            {
+                "player_id": player_existing_db.player_id,
+                "name": player_existing_db.name,
+                "jersey": player_existing_db.jersey,
+                "position": player_existing_db.position,
+                "is_starter": player_existing_db.is_starter,
+                "is_inactive": player_existing_db.is_inactive,
+                "sequence": player_existing_db.sequence,
+            }
+        )
         if player_existing_db.is_home:
             home_players.append(player_on_game_create)
         else:
@@ -52,41 +54,45 @@ def fetch_player_on_game(game_id: str) -> PlayersDict:
             box_score_player_track_v3 = boxscoreplayertrackv3.BoxScorePlayerTrackV3(game_id=game_id)
             player_stats = box_score_player_track_v3.player_stats.get_data_frame()
             for player in player_stats.itertuples():
-                player_on_game_create = PlayerOnGameCreate({
-                    'player_id': int(player.personId),
-                    'name': player.nameI,
-                    'jersey': player.jerseyNum,
-                    'position': player.position,
-                    'is_inactive': False,
-                })
+                player_on_game_create = PlayerOnGameCreate(
+                    {
+                        "player_id": int(player.personId),
+                        "name": player.nameI,
+                        "jersey": player.jerseyNum,
+                        "position": player.position,
+                        "is_inactive": False,
+                    }
+                )
                 if player.teamId == home_team_id:
-                    player_on_game_create['is_starter'] = len(home_players) < 5
-                    player_on_game_create['sequence'] = len(home_players) + 1
+                    player_on_game_create["is_starter"] = len(home_players) < 5
+                    player_on_game_create["sequence"] = len(home_players) + 1
                     home_players.append(player_on_game_create)
                 else:
-                    player_on_game_create['is_starter'] = len(away_players) < 5
-                    player_on_game_create['sequence'] = len(away_players) + 1
+                    player_on_game_create["is_starter"] = len(away_players) < 5
+                    player_on_game_create["sequence"] = len(away_players) + 1
                     away_players.append(player_on_game_create)
             for inactive_player in inactive_players.itertuples():
-                player_on_game_create = PlayerOnGameCreate({
-                    'player_id': inactive_player.PLAYER_ID,
-                    'name': ' '.join([inactive_player.FIRST_NAME, inactive_player.LAST_NAME]),
-                    'jersey': inactive_player.JERSEY_NUM,
-                    'position': '',
-                    'is_starter': False,
-                    'is_inactive': True,
-                })
+                player_on_game_create = PlayerOnGameCreate(
+                    {
+                        "player_id": inactive_player.PLAYER_ID,
+                        "name": " ".join([inactive_player.FIRST_NAME, inactive_player.LAST_NAME]),
+                        "jersey": inactive_player.JERSEY_NUM,
+                        "position": "",
+                        "is_starter": False,
+                        "is_inactive": True,
+                    }
+                )
                 if inactive_player.TEAM_ABBREVIATION == home_team_abbreviation:
-                    player_on_game_create['sequence'] = len(home_players) + 1
+                    player_on_game_create["sequence"] = len(home_players) + 1
                     home_players.append(player_on_game_create)
                 else:
-                    player_on_game_create['sequence'] = len(away_players) + 1
+                    player_on_game_create["sequence"] = len(away_players) + 1
                     away_players.append(player_on_game_create)
-        except:
+        except Exception:
             pass
     return {
-        'home_team_id': home_team_id,
-        'home_players': home_players,
-        'away_team_id': away_team_id,
-        'away_players': away_players,
+        "home_team_id": home_team_id,
+        "home_players": home_players,
+        "away_team_id": away_team_id,
+        "away_players": away_players,
     }

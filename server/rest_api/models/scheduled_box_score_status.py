@@ -1,5 +1,5 @@
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
 
 from rest_api.models.game_summary import GameSummary
 
@@ -13,8 +13,17 @@ class ScheduledBoxScoreStatus(models.Model):
         validators=[
             MinValueValidator(0),
             MaxValueValidator(100),
-        ]
+        ],
     )
+
     @property
     def status(self):
-        return 'errored' if self.error_message else 'pending' if self.progress == 0 else 'completed' if self.progress == 100 else 'progressing'
+        return (
+            "errored"
+            if self.error_message
+            else "pending"
+            if self.progress == 0
+            else "completed"
+            if self.progress == 100
+            else "progressing"
+        )

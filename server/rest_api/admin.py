@@ -1,17 +1,20 @@
 from django.contrib import admin
 
-from rest_api.models.game_summary import GameSummary, Team, PlayerOnGame
-from rest_api.models.box_score import BoxScore, BoxScorePlayer, BoxScoreData
+from rest_api.models.box_score import BoxScore, BoxScoreData, BoxScorePlayer
+from rest_api.models.game_summary import GameSummary, PlayerOnGame, Team
 from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
-from rest_api.models.season_summary import SeasonSummary, RegularSeasonTeamStats
+from rest_api.models.season_summary import RegularSeasonTeamStats, SeasonSummary
+
 
 @admin.register(GameSummary)
 class GameSummary(admin.ModelAdmin):
     pass
 
+
 @admin.register(Team)
 class Team(admin.ModelAdmin):
     pass
+
 
 @admin.register(PlayerOnGame)
 class PlayerOnGame(admin.ModelAdmin):
@@ -22,13 +25,16 @@ class PlayerOnGame(admin.ModelAdmin):
 class BoxScore(admin.ModelAdmin):
     pass
 
+
 @admin.register(BoxScorePlayer)
 class BoxScorePlayer(admin.ModelAdmin):
     pass
 
+
 @admin.register(BoxScoreData)
 class BoxScoreData(admin.ModelAdmin):
     pass
+
 
 @admin.register(ScheduledBoxScoreStatus)
 class ScheduledBoxScoreStatus(admin.ModelAdmin):
@@ -38,6 +44,7 @@ class ScheduledBoxScoreStatus(admin.ModelAdmin):
 @admin.register(SeasonSummary)
 class SeasonSummary(admin.ModelAdmin):
     pass
+
 
 @admin.register(RegularSeasonTeamStats)
 class RegularSeasonTeamStats(admin.ModelAdmin):

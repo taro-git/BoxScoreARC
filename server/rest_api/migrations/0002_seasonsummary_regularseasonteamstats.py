@@ -5,48 +5,65 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('rest_api', '0001_initial'),
+        ("rest_api", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SeasonSummary',
+            name="SeasonSummary",
             fields=[
-                ('season', models.CharField(primary_key=True, serialize=False)),
+                ("season", models.CharField(primary_key=True, serialize=False)),
             ],
         ),
         migrations.CreateModel(
-            name='RegularSeasonTeamStats',
+            name="RegularSeasonTeamStats",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('conference', models.CharField()),
-                ('conference_rank', models.IntegerField()),
-                ('division', models.CharField()),
-                ('division_rank', models.IntegerField()),
-                ('win', models.IntegerField()),
-                ('lose', models.IntegerField()),
-                ('pts', models.IntegerField()),
-                ('ast', models.IntegerField()),
-                ('stl', models.IntegerField()),
-                ('blk', models.IntegerField()),
-                ('fg', models.IntegerField()),
-                ('fga', models.IntegerField()),
-                ('three', models.IntegerField()),
-                ('threea', models.IntegerField()),
-                ('ft', models.IntegerField()),
-                ('fta', models.IntegerField()),
-                ('oreb', models.IntegerField()),
-                ('dreb', models.IntegerField()),
-                ('to', models.IntegerField()),
-                ('pf', models.IntegerField()),
-                ('plusminus', models.IntegerField()),
-                ('team_id', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='rest_api.team')),
-                ('season', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='regular_stats', to='rest_api.seasonsummary')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("conference", models.CharField()),
+                ("conference_rank", models.IntegerField()),
+                ("division", models.CharField()),
+                ("division_rank", models.IntegerField()),
+                ("win", models.IntegerField()),
+                ("lose", models.IntegerField()),
+                ("pts", models.IntegerField()),
+                ("ast", models.IntegerField()),
+                ("stl", models.IntegerField()),
+                ("blk", models.IntegerField()),
+                ("fg", models.IntegerField()),
+                ("fga", models.IntegerField()),
+                ("three", models.IntegerField()),
+                ("threea", models.IntegerField()),
+                ("ft", models.IntegerField()),
+                ("fta", models.IntegerField()),
+                ("oreb", models.IntegerField()),
+                ("dreb", models.IntegerField()),
+                ("to", models.IntegerField()),
+                ("pf", models.IntegerField()),
+                ("plusminus", models.IntegerField()),
+                (
+                    "team_id",
+                    models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to="rest_api.team"),
+                ),
+                (
+                    "season",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="regular_stats",
+                        to="rest_api.seasonsummary",
+                    ),
+                ),
             ],
             options={
-                'constraints': [models.UniqueConstraint(fields=('team_id', 'season'), name='unique_team_id_season')],
+                "constraints": [models.UniqueConstraint(fields=("team_id", "season"), name="unique_team_id_season")],
             },
         ),
     ]

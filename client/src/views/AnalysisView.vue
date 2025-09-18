@@ -1,6 +1,3 @@
-<template>
-    Analysis 画面は準備中です。
-</template>
+<template>Analysis 画面は準備中です。</template>
 
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>

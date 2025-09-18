@@ -5,6 +5,7 @@ from rest_api.models.game_summary import Team
 
 class SeasonSummary(models.Model):
     season = models.CharField(primary_key=True)
+
     @property
     def regular_season_team_stats(self):
         return self.regular_stats.all()
@@ -12,7 +13,7 @@ class SeasonSummary(models.Model):
 
 class RegularSeasonTeamStats(models.Model):
     team_id = models.ForeignKey(Team, on_delete=models.PROTECT)
-    season = models.ForeignKey(SeasonSummary, on_delete=models.PROTECT, related_name='regular_stats')
+    season = models.ForeignKey(SeasonSummary, on_delete=models.PROTECT, related_name="regular_stats")
     conference = models.CharField()
     conference_rank = models.IntegerField()
     division = models.CharField()
@@ -34,24 +35,24 @@ class RegularSeasonTeamStats(models.Model):
     to = models.IntegerField()
     pf = models.IntegerField()
     plusminus = models.IntegerField()
+
     @property
     def reb(self):
         return self.oreb + self.dreb
+
     @property
     def eff(self):
-        return (self.pts + self.reb + self.ast + self.stl + self.blk) - ((self.fga - self.fg) + (self.fta - self.ft) + self.to)
+        return (self.pts + self.reb + self.ast + self.stl + self.blk) - (
+            (self.fga - self.fg) + (self.fta - self.ft) + self.to
+        )
+
     @property
     def team_abbreviation(self):
         return self.team_id.abbreviation
+
     @property
     def team_logo(self):
         return self.team_id.logo
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['team_id', 'season'], name='unique_team_id_season')
-        ]
-    
-
-
-
+        constraints = [models.UniqueConstraint(fields=["team_id", "season"], name="unique_team_id_season")]
