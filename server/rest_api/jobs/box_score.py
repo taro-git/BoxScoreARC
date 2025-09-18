@@ -25,4 +25,5 @@ def _daily_box_score_jobs():
     box_scores = [box_score for box_score in box_scores if not box_score.is_collect]
     for box_score in box_scores:
         ScheduledBoxScoreStatus.objects.filter(game_id=box_score.game_id.game_id).delete()
+    ScheduledBoxScoreStatus.objects.filter(error_message__isnull=False).delete()
     print(f"[scheduler] finish daily job at {datetime.now()}: box score")
