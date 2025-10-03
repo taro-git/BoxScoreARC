@@ -4,7 +4,9 @@ from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
+from django.utils.timezone import make_aware
 
+from rest_api.models.game_summary import GameSummary
 from rest_api.services.game_summary_service import (
     fetch_game_summaries_by_season,
     get_regular_season_team_ids_by_season,
@@ -63,15 +65,21 @@ def daily_game_summary_job(scheduler: BackgroundScheduler):
     print("[scheduler] add daily job: game summary")
     scheduler.add_job(
         func=_daily_game_summary_jobs,
-        trigger=CronTrigger(hour=0, minute=0),
+        trigger=CronTrigger(hour=0, minute=25),
         id="daily_game_summary_job",
         replace_existing=True,
     )
 
 
 def _daily_game_summary_jobs():
-    """nba_api をたたいて、当日以降の game summary を挿入・更新します."""
+    """nba_api をたたいて、以下の game summary を挿入・更新します.
+    1. 当日以降のもの
+    2. 過去実施済みにも関わらず DB 上のステータスが試合終了となっていないもの"""
     print(f"[scheduler] start daily job at {datetime.now()}: game summary")
+    invalid_game_summaries = GameSummary.objects.filter(game_datetime__lte=(make_aware(datetime.now()))).exclude(
+        status_id=3
+    )
+    invalid_game_ids = [game_summary.game_id for game_summary in invalid_game_summaries]
     today = datetime.now(ZoneInfo("America/New_York")).replace(hour=0, minute=0, second=0, microsecond=0)
     this_year = today.year
     years = list(range(this_year, this_year - 2, -1))
@@ -81,7 +89,10 @@ def _daily_game_summary_jobs():
             print(f"[scheduler] fetch game summaries {season}")
             game_summaries = fetch_game_summaries_by_season(season)
             for game_summary in [
-                game_summary for game_summary in game_summaries if game_summary["game_datetime"] > today
+                game_summary
+                for game_summary in game_summaries
+                if game_summary["game_datetime"] > today
+                or (game_summary["game_id"] in invalid_game_ids and game_summary["status_id"] == 3)
             ]:
                 try:
                     upsert_game_summary(game_summary)
