@@ -65,7 +65,7 @@ def daily_game_summary_job(scheduler: BackgroundScheduler):
     print("[scheduler] add daily job: game summary")
     scheduler.add_job(
         func=_daily_game_summary_jobs,
-        trigger=CronTrigger(hour=0, minute=25),
+        trigger=CronTrigger(hour=0, minute=0),
         id="daily_game_summary_job",
         replace_existing=True,
     )
