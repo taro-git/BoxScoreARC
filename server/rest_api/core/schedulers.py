@@ -11,7 +11,7 @@ from rest_api.jobs.season_summaries import (
     initialize_season_summaries,
 )
 
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone="Asia/Tokyo")
 
 
 def start_scheduler():
