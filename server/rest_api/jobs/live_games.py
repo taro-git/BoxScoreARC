@@ -5,6 +5,7 @@ from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from django.utils.timezone import make_aware
 
+from rest_api.models.box_score import BoxScore
 from rest_api.models.game_summary import GameSummary
 from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
 from rest_api.services.box_score_service import upsert_box_score
@@ -33,14 +34,13 @@ def _update_live_games_job(scheduler: BackgroundScheduler):
     today = datetime.now()
     today = today.replace(hour=0, minute=0, second=0, microsecond=0)
     game_summaries = GameSummary.objects.filter(
-        game_datetime__range=(make_aware(today), make_aware(today + timedelta(days=1))),
-        status_id=1,
+        game_datetime__range=(make_aware(today), make_aware(today + timedelta(minutes=60 * 24 - 1))),
     )
     for game_summary in game_summaries:
         job_id = f"update_live_box_score_{game_summary.game_id}"
         print(
             f"[scheduler] add job ({job_id}) whitch is every 15 minutes "
-            f"from {game_summary.game_datetime.date()}: live game "
+            f"from {game_summary.game_datetime}: live game "
             f"({game_summary.home_team.abbreviation} vs. {game_summary.away_team.abbreviation})"
         )
         scheduler.add_job(
@@ -76,10 +76,14 @@ def _update_live_game_job(scheduler: BackgroundScheduler, job_id: str, game_id: 
         else:
             print(f"[scheduler] try fetch and upsert box score of finished game, {match_up}")
             status = ScheduledBoxScoreStatus.objects.filter(game_id=game_id).first()
-            if status is None or status.status == "errored":
-                print(f"[scheduler] error in fetch and upsert box score of finished game, {match_up}. so retry")
+            box_score = BoxScore.objects.filter(game_id=game_id).first()
+            if status is None or status.status == "errored" or box_score is None or not box_score.is_collect:
+                print(
+                    f"[scheduler] not collect or error in fetch and upsert box score of finished game, {match_up}."
+                    f" so retry"
+                )
                 upsert_scheduled_box_score_status({"game_id": game_id, "progress": 0})
-            elif status.status == "completed":
+            elif status.status == "completed" and box_score.is_collect:
                 try:
                     players = fetch_player_on_game(game_id)
                     upsert_game_summary(
@@ -92,15 +96,15 @@ def _update_live_game_job(scheduler: BackgroundScheduler, job_id: str, game_id: 
                             "away_team_id": game_summary.away_team.team_id,
                             "away_team_abb": game_summary.away_team.abbreviation,
                             "away_score": game_summary.away_score,
-                            "away_players": players["home_players"],
+                            "away_players": players["away_players"],
                             "game_datetime": game_summary.game_datetime,
                             "status_id": 3,
                             "status_text": game_summary.status_text,
                             "sequence": game_summary.sequence,
                         }
                     )
+                    print(f"[scheduler] remove {job_id}")
+                    scheduler.remove_job(job_id)
                 except Exception as e:
                     print(f"[scheduler] error in final upsert_game_summary, {match_up}. {e}")
-                print(f"[scheduler] remove {job_id}")
-                scheduler.remove_job(job_id)
     return

@@ -10,7 +10,7 @@
         v-for="team of Teams"
         :key="team"
         cols="5"
-        :class="game.gameSummary.statusId === 3 ? 'pa-0' : 'px-0'"
+        :class="game.gameSummary.statusId !== 1 ? 'pa-0' : 'px-0'"
       >
         <v-btn :value="team" class="bg-darken w-100">{{
           gameSummary[team].abbreviation
@@ -18,7 +18,7 @@
       </v-col>
     </v-btn-toggle>
     <v-skeleton-loader
-      v-if="game.gameSummary.statusId === 3"
+      v-if="game.gameSummary.statusId !== 1"
       elevation="7"
       :loading="isLoading"
       color="lighten"
@@ -71,6 +71,7 @@ import {
   BoxScoreColumnKeys,
   type BoxScoreTableData,
 } from "../types/BoxScore";
+import { GameSummary } from "../types/GameSummary";
 import BoxScoreTable from "./BoxScoreTable.vue";
 
 const props = defineProps<{
@@ -168,6 +169,7 @@ const pollScheduledBoxScoreStatus = async () => {
 let pollingTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 onUnmounted(() => {
+  Object.assign(game.gameSummary, new GameSummary());
   if (pollingTimeoutId) {
     clearTimeout(pollingTimeoutId);
     pollingTimeoutId = null;

@@ -1,10 +1,10 @@
 from django.db import models
 
-from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
+from rest_api.models.game_summary import GameSummary
 
 
 class BoxScore(models.Model):
-    game_id = models.OneToOneField(ScheduledBoxScoreStatus, primary_key=True, on_delete=models.CASCADE)
+    game_id = models.OneToOneField(GameSummary, primary_key=True, on_delete=models.CASCADE)
     final_seconds = models.IntegerField()
 
     @property
@@ -39,6 +39,7 @@ class BoxScore(models.Model):
             and home_plusminus + away_plusminus == 0
             and self.final_seconds * 5 == home_sec
             and home_sec == away_sec
+            and self.final_period >= 4
         )
 
     @property

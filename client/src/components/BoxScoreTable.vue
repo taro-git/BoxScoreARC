@@ -41,7 +41,7 @@
               v-for="(cell, colIndex) in row.comulativeBoxscore"
               :key="'cell-' + rowIndex + '-' + colIndex"
               :style="
-                !isCollect && (colIndex == 0 || colIndex == 20)
+                (!isCollect && gameSummary.statusId === 3) && (colIndex == 0 || colIndex == 20)
                   ? { 'background-color': '#666666' }
                   : {}
               "

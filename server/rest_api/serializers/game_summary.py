@@ -108,12 +108,12 @@ class GameSummarySerializer(serializers.ModelSerializer[GameSummary]):
         instance.save()
 
         if home_players_data is not None:
-            instance.players.filter(is_home=True).delete()  # type: ignore
             for home_player_data in home_players_data:
+                PlayerOnGame.objects.filter(game_id=instance.game_id, player_id=home_player_data["player_id"]).delete()
                 PlayerOnGame.objects.create(game_id=instance, is_home=True, **home_player_data)
         if away_players_data is not None:
-            instance.players.filter(is_home=False).delete()  # type: ignore
             for away_player_data in away_players_data:
+                PlayerOnGame.objects.filter(game_id=instance.game_id, player_id=away_player_data["player_id"]).delete()
                 PlayerOnGame.objects.create(game_id=instance, is_home=False, **away_player_data)
 
         return instance
