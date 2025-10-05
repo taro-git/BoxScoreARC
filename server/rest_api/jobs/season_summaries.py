@@ -78,6 +78,7 @@ def daily_season_summary_job(scheduler: BackgroundScheduler):
         func=_daily_season_summary_job,
         trigger=CronTrigger(hour=0, minute=0),
         id="daily_season_summary_job",
+        next_run_time=datetime.now(),
         replace_existing=True,
     )
 

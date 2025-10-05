@@ -1,6 +1,6 @@
 <template>
   <v-data-table
-    v-if="game.gameSummary.statusId === 3"
+    v-if="game.gameSummary.statusId !== 1"
     :headers="headers"
     :items="game.teamStats"
     density="compact"

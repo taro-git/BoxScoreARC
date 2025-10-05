@@ -67,6 +67,7 @@ def daily_game_summary_job(scheduler: BackgroundScheduler):
         func=_daily_game_summary_jobs,
         trigger=CronTrigger(hour=0, minute=0),
         id="daily_game_summary_job",
+        next_run_time=datetime.now(),
         replace_existing=True,
     )
 

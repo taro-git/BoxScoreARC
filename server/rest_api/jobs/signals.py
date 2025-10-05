@@ -17,13 +17,24 @@ def _make_box_score_data(instance: ScheduledBoxScoreStatus):
         instance.progress = 1
         instance.save()
         game_summary_create = update_players_in_game_summary_by_game_id(instance.game_id.game_id)
-        upsert_game_summary(game_summary_create)
         instance.progress = 30
         instance.save()
         box_score_create = fetch_box_score(instance.game_id.game_id, instance)
-        upsert_box_score(box_score_create)
-        instance.progress = 100
-        instance.save()
+        home_score = sum([p["box_score_data"][-1]["pts"] for p in box_score_create["home_players"]])
+        away_score = sum([p["box_score_data"][-1]["pts"] for p in box_score_create["away_players"]])
+        if home_score == game_summary_create["home_score"] and away_score == game_summary_create["away_score"]:
+            upsert_game_summary(game_summary_create)
+            upsert_box_score(box_score_create)
+            instance.progress = 100
+            instance.save()
+        else:
+            print(
+                f"score is not match."
+                f" from game summary: {game_summary_create['away_score']} - {game_summary_create['home_score']}"
+                f" from box score: {away_score} - {home_score}"
+            )
+            instance.delete()
+            print(f"delete scheduled box score status record; game id is {game_summary_create['game_id']}")
     except Exception as e:
         instance.error_message = str(e)
         instance.save()

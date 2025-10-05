@@ -15,6 +15,7 @@ def daily_box_score_job(scheduler: BackgroundScheduler):
         func=_daily_box_score_jobs,
         trigger=CronTrigger(hour=0, minute=0),
         id="daily_box_score_job",
+        next_run_time=datetime.now(),
         replace_existing=True,
     )
 
@@ -25,5 +26,6 @@ def _daily_box_score_jobs():
     box_scores = [box_score for box_score in box_scores if not box_score.is_collect]
     for box_score in box_scores:
         ScheduledBoxScoreStatus.objects.filter(game_id=box_score.game_id.game_id).delete()
+        box_score.delete()
     ScheduledBoxScoreStatus.objects.filter(error_message__isnull=False).delete()
     print(f"[scheduler] finish daily job at {datetime.now()}: box score")

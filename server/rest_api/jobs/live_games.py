@@ -1,4 +1,6 @@
+from copy import deepcopy
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -25,6 +27,7 @@ def update_live_games_job(scheduler: BackgroundScheduler):
         func=lambda: _update_live_games_job(scheduler),
         trigger=CronTrigger(hour=0, minute=0),
         id="update_live_games_job",
+        next_run_time=datetime.now(),
         replace_existing=True,
     )
 
@@ -35,19 +38,22 @@ def _update_live_games_job(scheduler: BackgroundScheduler):
     today = today.replace(hour=0, minute=0, second=0, microsecond=0)
     game_summaries = GameSummary.objects.filter(
         game_datetime__range=(make_aware(today), make_aware(today + timedelta(minutes=60 * 24 - 1))),
-    )
+    ).exclude(status_id=3)
     for game_summary in game_summaries:
         job_id = f"update_live_box_score_{game_summary.game_id}"
+        game_datetime = game_summary.game_datetime.astimezone(ZoneInfo("Asia/Tokyo"))
         print(
-            f"[scheduler] add job ({job_id}) whitch is every 15 minutes "
-            f"from {game_summary.game_datetime}: live game "
+            f"[scheduler] add job ({job_id}) whitch is every 10 minutes "
+            f"from {game_datetime}: live game "
             f"({game_summary.home_team.abbreviation} vs. {game_summary.away_team.abbreviation})"
         )
         scheduler.add_job(
-            func=lambda: _update_live_game_job(scheduler, job_id, game_summary.game_id),
-            trigger=IntervalTrigger(minutes=15),
-            id=job_id,
-            next_run_time=game_summary.game_datetime,
+            func=lambda jid=deepcopy(job_id), gid=deepcopy(game_summary.game_id): _update_live_game_job(
+                scheduler, jid, gid
+            ),
+            trigger=IntervalTrigger(minutes=10),
+            id=deepcopy(job_id),
+            next_run_time=deepcopy(game_datetime),
             replace_existing=True,
         )
     return

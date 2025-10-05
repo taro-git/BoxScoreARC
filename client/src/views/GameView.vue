@@ -40,6 +40,15 @@
             class="mx-6"
           />
         </v-sheet>
+        <v-sheet
+          v-if="
+            (tab === 'boxScore' || tab === 'teamStats') &&
+            game.gameSummary.statusId == 2
+          "
+          class="bg-base px-6 text-center"
+        >
+          {{ game.gameSummary.statusText }}
+        </v-sheet>
         <component :is="tabComponents[tab]" v-bind="tabProps[tab]" />
       </v-tabs-window-item>
     </v-tabs-window>
