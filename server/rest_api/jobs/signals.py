@@ -33,8 +33,7 @@ def _make_box_score_data(instance: ScheduledBoxScoreStatus):
                 f" from game summary: {game_summary_create['away_score']} - {game_summary_create['home_score']}"
                 f" from box score: {away_score} - {home_score}"
             )
-            instance.delete()
-            print(f"delete scheduled box score status record; game id is {game_summary_create['game_id']}")
+            raise ValueError("invalid data")
     except Exception as e:
         instance.error_message = str(e)
         instance.save()

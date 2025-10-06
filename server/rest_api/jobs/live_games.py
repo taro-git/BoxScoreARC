@@ -10,10 +10,10 @@ from django.utils.timezone import make_aware
 from rest_api.models.box_score import BoxScore
 from rest_api.models.game_summary import GameSummary
 from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
-from rest_api.services.box_score_service import upsert_box_score
-from rest_api.services.game_summary_service import upsert_game_summary
-from rest_api.services.scheduled_box_score_status_service import (
-    upsert_scheduled_box_score_status,
+from rest_api.services.box_score_service import fetch_box_score, upsert_box_score
+from rest_api.services.game_summary_service import (
+    update_players_in_game_summary_by_game_id,
+    upsert_game_summary,
 )
 from rest_api.utils.fetch_live_game import fetch_live_game
 from rest_api.utils.fetch_player_on_game import fetch_player_on_game
@@ -88,7 +88,32 @@ def _update_live_game_job(scheduler: BackgroundScheduler, job_id: str, game_id: 
                     f"[scheduler] not collect or error in fetch and upsert box score of finished game, {match_up}."
                     f" so retry"
                 )
-                upsert_scheduled_box_score_status({"game_id": game_id, "progress": 0})
+                try:
+                    game_summary_create = update_players_in_game_summary_by_game_id(game_id)
+                except Exception as e:
+                    print(f"[scheduler] error in update_players_in_game_summary_by_game_id, {match_up}. {e}")
+                try:
+                    box_score_create = fetch_box_score(game_id)
+                except Exception as e:
+                    print(f"[scheduler] error in fetch_box_score, {match_up}. {e}")
+                try:
+                    home_score = sum([p["box_score_data"][-1]["pts"] for p in box_score_create["home_players"]])
+                    away_score = sum([p["box_score_data"][-1]["pts"] for p in box_score_create["away_players"]])
+                    if (
+                        home_score == game_summary_create["home_score"]
+                        and away_score == game_summary_create["away_score"]
+                    ):
+                        upsert_game_summary(game_summary_create)
+                        upsert_box_score(box_score_create)
+                    else:
+                        raise ValueError(
+                            f"score is not match."
+                            f" from game summary:"
+                            f" {game_summary_create['away_score']} - {game_summary_create['home_score']}"
+                            f" from box score: {away_score} - {home_score}"
+                        )
+                except Exception as e:
+                    print(f"[scheduler] error in upsert_game_summary and upsert_box_score, {match_up}. {e}")
             elif status.status == "completed" and box_score.is_collect:
                 try:
                     players = fetch_player_on_game(game_id)

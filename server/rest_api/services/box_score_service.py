@@ -15,15 +15,17 @@ from rest_api.utils.make_box_score_create import BoxScoreCreateMaker
 ##
 ## Fetch from nba_api
 ####
-def fetch_box_score(game_id: str, box_score_status: ScheduledBoxScoreStatus) -> BoxScoreCreate:
+def fetch_box_score(game_id: str, box_score_status: ScheduledBoxScoreStatus | None = None) -> BoxScoreCreate:
     """指定の game_id の PlayByPlay を nba_api から取得し、BoxScoreCreate クラスを生成します."""
     play_by_play_v2 = playbyplayv2.PlayByPlayV2(game_id=game_id)
-    box_score_status.progress = 36
-    box_score_status.save()
+    if box_score_status is not None:
+        box_score_status.progress = 36
+        box_score_status.save()
     play_by_play = play_by_play_v2.play_by_play.get_data_frame()
     players = fetch_player_on_game(game_id)
-    box_score_status.progress = 39
-    box_score_status.save()
+    if box_score_status is not None:
+        box_score_status.progress = 39
+        box_score_status.save()
     return _convert_play_by_play_to_box_score_create(game_id, play_by_play, players, box_score_status)
 
 
@@ -31,7 +33,7 @@ def _convert_play_by_play_to_box_score_create(
     game_id: str,
     play_by_play: DataFrame,
     players_info: PlayersDict,
-    box_score_status: ScheduledBoxScoreStatus,
+    box_score_status: ScheduledBoxScoreStatus | None = None,
 ) -> BoxScoreCreate:
     on_court_home_player_ids = [players_info["home_players"][i]["player_id"] for i in range(5)]
     on_court_away_player_ids = [players_info["away_players"][i]["player_id"] for i in range(5)]
@@ -46,10 +48,11 @@ def _convert_play_by_play_to_box_score_create(
     length_of_play_by_play = len(play_by_play)
     change_period_flag = False
     for i, one_play in enumerate(play_by_play.itertuples()):
-        progressing = 39 + round((i + 1) / length_of_play_by_play * 60)
-        if box_score_status.progress + 4 < progressing:
-            box_score_status.progress = progressing
-            box_score_status.save()
+        if box_score_status is not None:
+            progressing = 39 + round((i + 1) / length_of_play_by_play * 60)
+            if box_score_status.progress + 4 < progressing:
+                box_score_status.progress = progressing
+                box_score_status.save()
         elapsed_seconds = _get_elapsed_seconds(one_play.PERIOD, one_play.PCTIMESTRING)
         elapsed_seconds_diff = elapsed_seconds - last_elapsed_seconds
         # ピリオド間の選手交代
