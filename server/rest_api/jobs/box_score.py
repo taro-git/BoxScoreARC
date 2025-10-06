@@ -26,7 +26,7 @@ def _daily_box_score_jobs():
     box_scores = BoxScore.objects.all()
     game_summaries = GameSummary.objects.filter(game_id__in=[bs.game_id.game_id for bs in box_scores])
     invalid_game_summary_ids = [
-        gs for gs in game_summaries if len(gs.home_players_on_game) < 8 or len(gs.away_players_on_game) < 8
+        gs.game_id for gs in game_summaries if len(gs.home_players_on_game) < 8 or len(gs.away_players_on_game) < 8
     ]
     box_scores = [bs for bs in box_scores if not bs.is_collect or bs.game_id.game_id in invalid_game_summary_ids]
     for box_score in box_scores:
