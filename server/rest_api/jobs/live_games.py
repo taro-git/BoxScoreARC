@@ -1,3 +1,4 @@
+import random
 from copy import deepcopy
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -15,6 +16,7 @@ from rest_api.services.game_summary_service import (
     update_players_in_game_summary_by_game_id,
     upsert_game_summary,
 )
+from rest_api.services.scheduled_box_score_status_service import upsert_scheduled_box_score_status
 from rest_api.utils.fetch_live_game import fetch_live_game
 from rest_api.utils.fetch_player_on_game import fetch_player_on_game
 
@@ -34,6 +36,7 @@ def update_live_games_job(scheduler: BackgroundScheduler):
 
 def _update_live_games_job(scheduler: BackgroundScheduler):
     """当日に予定されている試合がある場合に、game summary および box score の定期更新用ジョブを追加します."""
+    print(f"[scheduler] start daily job at {datetime.now()}: live game")
     today = datetime.now()
     today = today.replace(hour=0, minute=0, second=0, microsecond=0)
     game_summaries = GameSummary.objects.filter(
@@ -42,20 +45,22 @@ def _update_live_games_job(scheduler: BackgroundScheduler):
     for game_summary in game_summaries:
         job_id = f"update_live_box_score_{game_summary.game_id}"
         game_datetime = game_summary.game_datetime.astimezone(ZoneInfo("Asia/Tokyo"))
+        random_int = random.randint(0, 14)
         print(
-            f"[scheduler] add job ({job_id}) whitch is every 10 minutes "
-            f"from {game_datetime}: live game "
+            f"[scheduler] add job ({job_id}) whitch is every 15 minutes "
+            f"from {game_datetime + timedelta(minutes=random_int)}: live game "
             f"({game_summary.home_team.abbreviation} vs. {game_summary.away_team.abbreviation})"
         )
         scheduler.add_job(
             func=lambda jid=deepcopy(job_id), gid=deepcopy(game_summary.game_id): _update_live_game_job(
                 scheduler, jid, gid
             ),
-            trigger=IntervalTrigger(minutes=10),
+            trigger=IntervalTrigger(minutes=15),
             id=deepcopy(job_id),
-            next_run_time=deepcopy(game_datetime),
+            next_run_time=deepcopy(game_datetime) + timedelta(minutes=deepcopy(random_int)),
             replace_existing=True,
         )
+    print(f"[scheduler] finish daily job at {datetime.now()}: live game")
     return
 
 
@@ -81,17 +86,16 @@ def _update_live_game_job(scheduler: BackgroundScheduler, job_id: str, game_id: 
                 print(f"[scheduler] error in upsert_box_score, {match_up}. {e}")
         else:
             print(f"[scheduler] try fetch and upsert box score of finished game, {match_up}")
-            status = ScheduledBoxScoreStatus.objects.filter(game_id=game_id).first()
             box_score = BoxScore.objects.filter(game_id=game_id).first()
-            if status is None or status.status == "errored" or box_score is None or not box_score.is_collect:
+            try:
+                game_summary_create = update_players_in_game_summary_by_game_id(game_id)
+            except Exception as e:
+                print(f"[scheduler] error in update_players_in_game_summary_by_game_id, {match_up}. {e}")
+            if box_score is None or not box_score.is_collect:
                 print(
                     f"[scheduler] not collect or error in fetch and upsert box score of finished game, {match_up}."
                     f" so retry"
                 )
-                try:
-                    game_summary_create = update_players_in_game_summary_by_game_id(game_id)
-                except Exception as e:
-                    print(f"[scheduler] error in update_players_in_game_summary_by_game_id, {match_up}. {e}")
                 try:
                     box_score_create = fetch_box_score(game_id)
                 except Exception as e:
@@ -114,26 +118,11 @@ def _update_live_game_job(scheduler: BackgroundScheduler, job_id: str, game_id: 
                         )
                 except Exception as e:
                     print(f"[scheduler] error in upsert_game_summary and upsert_box_score, {match_up}. {e}")
-            elif status.status == "completed" and box_score.is_collect:
+            else:
                 try:
-                    players = fetch_player_on_game(game_id)
-                    upsert_game_summary(
-                        {
-                            "game_id": game_id,
-                            "home_team_id": game_summary.home_team.team_id,
-                            "home_team_abb": game_summary.home_team.abbreviation,
-                            "home_score": game_summary.home_score,
-                            "home_players": players["home_players"],
-                            "away_team_id": game_summary.away_team.team_id,
-                            "away_team_abb": game_summary.away_team.abbreviation,
-                            "away_score": game_summary.away_score,
-                            "away_players": players["away_players"],
-                            "game_datetime": game_summary.game_datetime,
-                            "status_id": 3,
-                            "status_text": game_summary.status_text,
-                            "sequence": game_summary.sequence,
-                        }
-                    )
+                    game_summary_create["status_id"] = 3
+                    upsert_game_summary(game_summary_create)
+                    upsert_scheduled_box_score_status({"game_id": game_id, "progress": 100})
                     print(f"[scheduler] remove {job_id}")
                     scheduler.remove_job(job_id)
                 except Exception as e:

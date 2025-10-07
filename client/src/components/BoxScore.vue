@@ -193,7 +193,7 @@ watch(gameSummary, (gameSummary) => {
             progress.value = 100;
           })
           .catch(() => {
-            errorMessage.value = "No data. Updating by 10 minuts.";
+            errorMessage.value = "No data. Updating by 15 minuts.";
           })
           .finally(() => {
             isLoading.value = false;
