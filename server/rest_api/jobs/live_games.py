@@ -10,7 +10,6 @@ from django.utils.timezone import make_aware
 
 from rest_api.models.box_score import BoxScore
 from rest_api.models.game_summary import GameSummary
-from rest_api.models.scheduled_box_score_status import ScheduledBoxScoreStatus
 from rest_api.services.box_score_service import fetch_box_score, upsert_box_score
 from rest_api.services.game_summary_service import (
     update_players_in_game_summary_by_game_id,
@@ -18,7 +17,6 @@ from rest_api.services.game_summary_service import (
 )
 from rest_api.services.scheduled_box_score_status_service import upsert_scheduled_box_score_status
 from rest_api.utils.fetch_live_game import fetch_live_game
-from rest_api.utils.fetch_player_on_game import fetch_player_on_game
 
 
 def update_live_games_job(scheduler: BackgroundScheduler):
@@ -91,9 +89,11 @@ def _update_live_game_job(scheduler: BackgroundScheduler, job_id: str, game_id: 
                 game_summary_create = update_players_in_game_summary_by_game_id(game_id)
             except Exception as e:
                 print(f"[scheduler] error in update_players_in_game_summary_by_game_id, {match_up}. {e}")
-            if box_score is None or not box_score.is_collect:
+            if (
+                box_score is None or not box_score.final_period >= 4
+            ):  # if box score data is from live, final_period is -6
                 print(
-                    f"[scheduler] not collect or error in fetch and upsert box score of finished game, {match_up}."
+                    f"[scheduler] not collect or error in fetch and upsert box score as finished game, {match_up}."
                     f" so retry"
                 )
                 try:

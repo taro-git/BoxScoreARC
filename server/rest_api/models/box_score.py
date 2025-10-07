@@ -1,6 +1,14 @@
+from typing import TypedDict
+
 from django.db import models
 
 from rest_api.models.game_summary import GameSummary
+
+
+class _TeamStats(TypedDict):
+    score: int
+    playing_time_sum: int
+    plusminus_sum: int
 
 
 class BoxScore(models.Model):
@@ -11,34 +19,37 @@ class BoxScore(models.Model):
     def final_period(self):
         return 4 + round((self.final_seconds - 4 * 12 * 60) / (5 * 60))
 
+    def _calc_team_stats(self, players) -> _TeamStats:
+        sec = 0
+        pts = 0
+        plusminus = 0
+        for player in players:
+            final_data = player.moment_data.last()
+            if final_data:
+                sec += final_data.sec
+                pts += final_data.pts
+                plusminus += final_data.plusminus
+        return {
+            "score": pts,
+            "playing_time_sum": sec,
+            "plusminus_sum": plusminus,
+        }
+
+    @property
+    def home_stats(self) -> _TeamStats:
+        return self._calc_team_stats(self.home_players_on_box_score)
+
+    @property
+    def away_stats(self) -> _TeamStats:
+        return self._calc_team_stats(self.away_players_on_box_score)
+
     @property
     def is_collect(self):
-        home_players = self.home_players_on_box_score
-        home_sec = 0
-        home_pts = 0
-        home_plusminus = 0
-        for home_player in home_players:
-            final_data = home_player.moment_data.last()
-            if final_data:
-                home_sec += final_data.sec
-                home_pts += final_data.pts
-                home_plusminus += final_data.plusminus
-
-        away_players = self.away_players_on_box_score
-        away_sec = 0
-        away_pts = 0
-        away_plusminus = 0
-        for away_player in away_players:
-            final_data = away_player.moment_data.last()
-            if final_data:
-                away_sec += final_data.sec
-                away_pts += final_data.pts
-                away_plusminus += final_data.plusminus
         return (
-            (home_pts - away_pts) * 5 == home_plusminus
-            and home_plusminus + away_plusminus == 0
-            and self.final_seconds * 5 == home_sec
-            and home_sec == away_sec
+            (self.home_stats["score"] - self.away_stats["score"]) * 5 == self.home_stats["plusminus_sum"]
+            and self.home_stats["plusminus_sum"] + self.away_stats["plusminus_sum"] == 0
+            and self.final_seconds * 5 == self.home_stats["playing_time_sum"]
+            and self.final_seconds * 5 == self.away_stats["playing_time_sum"]
             and self.final_period >= 4
         )
 
@@ -58,7 +69,7 @@ class BoxScorePlayer(models.Model):
 
     @property
     def data(self):
-        return self.moment_data.all()
+        return self.moment_data.order_by("elapsed_seconds")
 
     class Meta:
         constraints = [
