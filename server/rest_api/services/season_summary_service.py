@@ -1,7 +1,7 @@
 from django.db import IntegrityError, transaction
 from nba_api.stats.endpoints.teaminfocommon import TeamInfoCommon
 
-from rest_api.models.season_summary import RegularSeasonTeamStats, SeasonSummary
+from rest_api.models.season_summary import SeasonSummary
 from rest_api.serializers.season_summary import (
     RegularSeasonTeamStatsCreate,
     SeasonSummaryCreate,
@@ -71,51 +71,3 @@ def upsert_season_summary(season_summary_create: SeasonSummaryCreate):
         raise ValueError(f"DB制約違反: {e}")
     except ValueError as ve:
         raise ve
-
-
-def update_regular_season_team_stats(
-    season_summary: SeasonSummary,
-    regular_season_team_stats_create: RegularSeasonTeamStatsCreate,
-):
-    teams: list[RegularSeasonTeamStatsCreate] = []
-    regular_season_teams_stats: list[RegularSeasonTeamStats] = season_summary.regular_season_team_stats
-    team_stats_exists = regular_season_team_stats_create["team_id"] in [
-        team_stats.team_id for team_stats in regular_season_teams_stats
-    ]
-    if not team_stats_exists:
-        teams.append(regular_season_team_stats_create)
-    for team_stats in regular_season_teams_stats:
-        if team_stats_exists and team_stats.team_id == regular_season_team_stats_create["team_id"]:
-            teams.append(regular_season_team_stats_create)
-        else:
-            teams.append(
-                {
-                    "team_id": team_stats.team_id,
-                    "conference": team_stats.conference,
-                    "conference_rank": team_stats.conference_rank,
-                    "division": team_stats.division,
-                    "division_rank": team_stats.division_rank,
-                    "win": team_stats.win,
-                    "lose": team_stats.lose,
-                    "pts": team_stats.pts,
-                    "ast": team_stats.ast,
-                    "stl": team_stats.stl,
-                    "blk": team_stats.blk,
-                    "fg": team_stats.fg,
-                    "fga": team_stats.fga,
-                    "three": team_stats.three,
-                    "threea": team_stats.threea,
-                    "ft": team_stats.ft,
-                    "fta": team_stats.fta,
-                    "oreb": team_stats.oreb,
-                    "dreb": team_stats.dreb,
-                    "to": team_stats.to,
-                    "pf": team_stats.pf,
-                    "plusminus": team_stats.plusminus,
-                }
-            )
-    season_summary_create: SeasonSummaryCreate = {
-        "season": season_summary.season,
-        "teams": teams,
-    }
-    upsert_season_summary(season_summary_create)
