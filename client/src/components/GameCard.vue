@@ -4,7 +4,14 @@
       :to="{ name: RouteName.Game, params: { gameId: gameSummary.gameId } }"
       class="card"
     >
-      <div class="status">{{ statusText }}</div>
+      <div v-if="gameSummary.statusId==2" class="status text-accent">
+        <div class="live">
+          <span class="mdi mdi-record"></span>
+          <span>live</span>
+        </div>
+        <div>{{ statusText }}</div>
+      </div>
+      <div v-else class="status">{{ statusText }}</div>
       <div v-if="fullView" class="category">{{ gameSummary.gameCategory }}</div>
       <div class="teams">
         <div class="team">
@@ -74,6 +81,12 @@ if (props.gameSummary.statusId == 1) {
   text-decoration: none;
   border-radius: 12px;
   padding: 15px;
+}
+
+.live {
+  font-size: 10px;
+  text-align: center;
+  height: 10px;
 }
 
 .status {
